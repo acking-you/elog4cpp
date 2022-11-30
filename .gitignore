@@ -1,0 +1,12 @@
+cmake-build-debug
+cmake-build-release
+build
+build-fmt
+build-logger
+log
+.idea
+log.txt
+.vscode
+.vs
+gh-md-toc.exe
+gh-md-toc

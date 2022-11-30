@@ -1,0 +1,114 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class noncopyable{
+
+}
+
+class Util{
++getCurDateTime(isTime,time_t* now = nullptr);
++getErrorInfo(error_code);
++getLogFileName(basename,time_t& now);
+}
+
+class ProcessInfo{
+    +GetPid():pid_t
+    +GetTid():pid_t
+    +GetUid():pid_t
+    +GetHostname():string
+}
+
+class FixedBuffer<int>{
+    -  m_buffer: char[SIZE]
+    -  m_cur_buf: char*
+
+    + avail(): int
+    + size(): int
+    + data(): char*
+    + append(char* line,int len)
+    + bzero()
+    + reset()
+}
+
+class Logger{
+    - unique_ptr<AsyncLogging> m_logging
+    +GetInstance(): Logger&
+    +DoLog(context const &ctx)
+    +LogFile(context const& ctx)
+    +LogConsole(context const& ctx)
+}
+
+class CountDownLatch{
+    -m_cv: condition_variable
+    -m_mtx: mutex
+    -m_count: int
+    +CountDownLatch(count)
+    +wait()
+    +countDown(): int
+    +getCount(): int
+}
+
+class AsyncLogging{
+  -m_flushInterval: const int
+  -m_rolSize: const off64_t
+  -m_done: atomic<bool>
+  -m_basename: const string
+  -m_thread: unique_ptr<thread>
+  -m_latch: CountDownLatch
+  -m_mtx: mutex
+  -m_cv: condition_variable
+  -m_curBuffer: BufferPtr
+  -m_nextBuffer: BufferPtr
+  -BufferVectorPtr: m_buffers
+  +AsyncLogging(basename,rollSize,flushInterval = 3)
+  +append(line,len)
+  -do_done()
+  -thread_worker()
+}
+
+class LogFile{
+-m_rollSize: const off64_t
+-m_flushInterval: const int
+-m_checkEveryN: const int
+-m_count: int
+-m_basename: const string
+-m_mtx: unique_ptr<std::mutex>
+-m_lastPeriod: time_t
+-m_lastRoll: time_t
+-m_lastFlush: time_t
+-m_file: unique_ptr<FileAppender>
++LogFile(basename,rollSize,threadSafe = true,flushInterval = 3,checkEveryN = 1024)
++append(line,len)
++flush()
++rollFile(now = nullptr)
+-append_unlocked(line,len)
+}
+
+
+class FileAppender{
+     - m_file: FILE*
+     - m_buffer: char [64*1024]
+     - m_writenBytes: off64_t
+     + FileAppender(std::string const& filename)
+     + append(line,len)
+     + flush()
+     + writtenBytes(): off64_t
+     + resetWritten()
+     - write(line,len)
+     - init(basename)
+}
+Logger -.|> noncopyable
+Logger --o AsyncLogging
+
+AsyncLogging --|> LogFile
+
+AsyncLogging --|> FixedBuffer
+
+AsyncLogging --|> CountDownLatch
+
+AsyncLogging -.|> noncopyable
+LogFile --|> FileAppender
+
+LogFile -.|> noncopyable
+FileAppender -.|> noncopyable
+@enduml
