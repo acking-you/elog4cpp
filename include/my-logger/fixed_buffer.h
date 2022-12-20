@@ -2,17 +2,13 @@
 // Created by Alone on 2022-9-21.
 //
 
-#ifndef MY_LOGGER_FIXEDBUFFER_H
-#define MY_LOGGER_FIXEDBUFFER_H
-
-#include "noncopyable.h"
+#pragma once
+#include "common.h"
 
 #include <string>
-
 #include <cstring>
 
-namespace lblog
-{
+LBLOG_NAMESPACE_BEGIN
 	namespace detail
 	{
 		enum
@@ -67,5 +63,4 @@ namespace lblog
 			char* m_cur_buf{};     // 目前写入的位置
 		};
 	} // namespace detail
-};     // namespace lblog
-#endif // MY_LOGGER_FIXEDBUFFER_H
+LBLOG_NAMESPACE_END

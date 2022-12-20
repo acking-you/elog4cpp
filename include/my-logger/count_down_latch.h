@@ -2,13 +2,12 @@
 // Created by Alone on 2022-9-23.
 //
 
-#ifndef MY_LOGGER_COUNTDOWNLATCH_H
-#define MY_LOGGER_COUNTDOWNLATCH_H
+#pragma once
+#include "common.h"
 #include <condition_variable>
 #include <mutex>
 
-namespace lblog
-{
+LBLOG_NAMESPACE_BEGIN
 	namespace detail
 	{
 		class CountDownLatch
@@ -24,6 +23,5 @@ namespace lblog
 			int m_count;
 		};
 	}
-}
+LBLOG_NAMESPACE_END
 
-#endif //MY_LOGGER_COUNTDOWNLATCH_H

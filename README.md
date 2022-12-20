@@ -37,13 +37,13 @@ git clone https://github.com/ACking-you/my-logger.git
 
 **如果你clone本项目和你的项目为同级目录**，请在你的cmake文件中添加下面的代码，然后再链接这两个库便可得到本库的所有支持。
 
-```
+```cmake
 include_directories(../my-logger/include)#指定项目相关的inclue目录
 
 include_directories(../my-logger/dependencies/fmt/include)#指定项目所依赖的fmt库include目录
 
 link_directories(../my-logger/lib)#指定项目依赖的lib目录（需要手动编译后放在这里
-....
+...
 
 target_link_libraries(${CMAKE_PROJECT_NAME} logger fmt)#添加对应的链接库，注意使用多线程时请注意手动链接pthread
 ```

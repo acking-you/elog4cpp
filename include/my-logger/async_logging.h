@@ -2,11 +2,11 @@
 // Created by Alone on 2022-9-21.
 //
 
-#ifndef MY_LOGGER_ASYNCLOGGING_H
-#define MY_LOGGER_ASYNCLOGGING_H
-#include "FixedBuffer.hpp"
-#include "CountDownLatch.h"
-#include "noncopyable.h"
+#pragma once
+
+#include "common.h"
+#include "fixed_buffer.h"
+#include "count_down_latch.h"
 
 #include <vector>
 #include<mutex>
@@ -15,16 +15,15 @@
 #include <memory>
 #include <condition_variable>
 
-namespace lblog
-{
+LBLOG_NAMESPACE_BEGIN
 	namespace detail
 	{
-		class AsyncLogging : noncopyable
+		class async_logging : noncopyable
 		{
 		 public:
-			explicit AsyncLogging(std::string basename, off64_t rollSize, int flushInterval = 3);
+			explicit async_logging(std::string basename, off64_t rollSize, int flushInterval = 3);
 
-			~AsyncLogging();
+			~async_logging();
 
 			void append(const char* line, int len);
 
@@ -53,6 +52,4 @@ namespace lblog
 			BufferVectorPtr m_buffers;
 		};
 	}
-}
-
-#endif //MY_LOGGER_ASYNCLOGGING_H
+LBLOG_NAMESPACE_END

@@ -1,13 +1,13 @@
 //
 // Created by Alone on 2022-9-21.
 //
-#include"FileAppender.h"
-#include "LoggerUtil.h"
-#include "Logger.h"
+#include"my-logger/FileAppender.h"
+#include "my-logger/logger_util.h"
+#include "my-logger/logger.h"
 
-#include <unistd.h>
+#include <cstdio>
 
-using namespace lblog::detail;
+USING_LBLOG_DETAIL
 
 //'e' 代表O_CLOEXEC 防止fork多进程文件描述符未关闭
 FileAppender::FileAppender(std::string const& filename)
@@ -17,7 +17,7 @@ FileAppender::FileAppender(std::string const& filename)
 
 void FileAppender::init(std::string const& filename)
 {
-	//FIXME 需要判断写入文件的文件夹是否存在，以及最终文件是否正常打开
+	//判断写入文件的文件夹是否存在，以及最终文件是否正常打开
 	std::string filedir;
 	size_t pos;
 	if ((pos = filename.rfind('/')) == string::npos)
@@ -26,7 +26,7 @@ void FileAppender::init(std::string const& filename)
 		throw std::runtime_error("invalid filepath");
 	}
 	filedir = filename.substr(0, pos + 1);
-	if (access(filedir.c_str(), F_OK) == -1)
+	if (sys::CallAccess(filedir.c_str(), F_OK) == -1)
 	{
 		trace_("文件夹路径不存在：{}", filename);
 		throw std::runtime_error(fmt::format("filedir not exist! {}", filedir));
@@ -42,7 +42,7 @@ void FileAppender::init(std::string const& filename)
 		return;
 	}
 	trace_("设置 FILE* 缓冲区大小为{}", sizeof(m_buffer));
-	::setbuffer(m_file, m_buffer, sizeof(m_buffer));
+	sys::CallSetBuffer(m_file, m_buffer, sizeof(m_buffer));
 }
 
 FileAppender::~FileAppender()
@@ -97,7 +97,7 @@ size_t FileAppender::write(const char* line, size_t len)
 	if (m_file)
 	{
 		trace_("底层write执行");
-		sz = fwrite_unlocked(line, 1, len, m_file);
+		sz = sys::CallUnlockedWrite(line, 1, len, m_file);
 	}
 	return sz;
 }

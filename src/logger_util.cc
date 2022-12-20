@@ -2,14 +2,15 @@
 // Created by Alone on 2022-9-21.
 //
 
-#include "LoggerUtil.h"
-#include "ProcessInfo.h"
+#include "my-logger/logger_util.h"
+#include "my-logger/processinfo.h"
+#include "my-logger/systemcall_wrapper.h"
 
 #include <cstdio>
 #include<cassert>
 #include <cstring>
 
-using namespace lblog::detail;
+using namespace lblog;
 
 __thread char t_errnobuf[512];
 __thread char t_time[64];
@@ -18,7 +19,7 @@ __thread time_t t_lastSecond;
 
 const char* Util::getCurDateTime(bool isTime, time_t* now)
 {
-	time_t timer = time(nullptr);
+	time_t timer = time(0);
 	if (now != nullptr)
 	{ //减少系统调用，将此时间给外界复用
 		*now = timer;
@@ -27,7 +28,7 @@ const char* Util::getCurDateTime(bool isTime, time_t* now)
 	if (t_lastSecond != timer)
 	{
 		t_lastSecond = timer;
-		localtime_r(&timer, &t_tm);
+		sys::GetLocalTime_r(&timer, &t_tm);
 	}
 	int len;
 	if (isTime)
@@ -48,7 +49,7 @@ const char* Util::getCurDateTime(bool isTime, time_t* now)
 
 const char* Util::getErrorInfo(int error_code)
 {
-	return strerror_r(error_code, t_errnobuf, sizeof(t_errnobuf));
+	return sys::GetStrError_r(error_code, t_errnobuf, sizeof(t_errnobuf));
 }
 
 std::string Util::getLogFileName(const std::string& basename, time_t& now)
@@ -59,14 +60,14 @@ std::string Util::getLogFileName(const std::string& basename, time_t& now)
 	filename = basename;
 	char timebuf[32];
 	struct tm tm{};
-	localtime_r(&now, &tm);
+	sys::GetLocalTime_r(&now, &tm);
 	strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S.", &tm); //除非1s刷满，否则每次得到的文件名不可能相同
 	filename += timebuf;
 
 	filename += ProcessInfo::GetHostname();
 
 	char pidbuf[32];
-	snprintf(pidbuf, sizeof pidbuf, ".%d", ProcessInfo::GetPid());
+	snprintf(pidbuf, sizeof pidbuf, ".%lu", ProcessInfo::GetPid());
 	filename += pidbuf;
 	return filename;
 }

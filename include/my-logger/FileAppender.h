@@ -1,19 +1,16 @@
 //
 // Created by Alone on 2022-9-21.
 //
+#pragma once
 
-#ifndef MY_LOGGER_FILEAPPENDER_H
-#define MY_LOGGER_FILEAPPENDER_H
-
-#include "noncopyable.h"
+#include "common.h"
 
 #include <string>
 
 #include<cstdio>
 #include<sys/types.h>
 
-namespace lblog
-{
+LBLOG_NAMESPACE_BEGIN
 	namespace detail
 	{
 		class FileAppender : noncopyable
@@ -41,5 +38,4 @@ namespace lblog
 			off64_t m_writenBytes{};
 		};
 	}
-}
-#endif //MY_LOGGER_FILEAPPENDER_H
+LBLOG_NAMESPACE_END

@@ -1,10 +1,10 @@
 //
 // Created by Alone on 2022-9-21.
 //
-#include "LoggerUtil.h"
-#include "LogFile.h"
-#include "Logger.h"
-#include"AsyncLogging.h"
+#include "my-logger/logger_util.h"
+#include "my-logger/log_file.h"
+#include "my-logger/logger.h"
+#include"my-logger/async_logging.h"
 
 #include <iostream>
 #include <utility>
@@ -13,10 +13,10 @@
 
 #include <cassert>
 
-using namespace lblog;
-using namespace lblog::detail;
+USING_LBLOG
+USING_LBLOG_DETAIL
 
-AsyncLogging::AsyncLogging(std::string basename, off64_t rollSize, int flushInterval) :
+async_logging::async_logging(std::string basename, off64_t rollSize, int flushInterval) :
 	m_basename(std::move(basename)),
 	m_rollSize(rollSize),
 	m_flushInterval(flushInterval),
@@ -42,18 +42,18 @@ AsyncLogging::AsyncLogging(std::string basename, off64_t rollSize, int flushInte
 	{
 		trace_("创建线程任务或buffer初始化失败");
 		do_done(); //需要做的额外安全处理
-		throw std::runtime_error("AsyncLogging create thread or buffer alloc error");
+		throw std::runtime_error("async_logging create thread or buffer alloc error");
 	}
 }
 
-AsyncLogging::~AsyncLogging()
+async_logging::~async_logging()
 {
 	trace_("AsyncLogging析构执行，进行资源的清理");
 	do_done();
 }
 
 //如果发生异常，则需要维护最后的资源安全退出
-void AsyncLogging::do_done()
+void async_logging::do_done()
 {
 	if (m_done)
 	{
@@ -73,13 +73,13 @@ void AsyncLogging::do_done()
 	}
 }
 
-void AsyncLogging::waitDone()
+void async_logging::waitDone()
 {
 	do_done();
 }
 
 // 双缓冲关键代码
-void AsyncLogging::append(const char* line, int len)
+void async_logging::append(const char* line, int len)
 {
 	//下面为关键逻辑，采取双缓冲机制，如果缓存足够则push进去，否则将缓存转移到vector中待flush到磁盘
 	//虽然是这样说双缓冲，实际上不存在两个层级的缓存，第二个层级只是存储待push缓存的指针，并不会有拷贝
@@ -110,7 +110,7 @@ void AsyncLogging::append(const char* line, int len)
 }
 
 //异步写入和内存复用
-void AsyncLogging::thread_worker()
+void async_logging::thread_worker()
 {
 	try
 	{
@@ -119,7 +119,7 @@ void AsyncLogging::thread_worker()
 		BufferPtr newBuffer2 = std::make_unique<Buffer>();
 		newBuffer1->bzero();
 		newBuffer2->bzero();
-		BufferVectorPtr buffersToWrite;//FIXME 用于帮助m_buffers写入磁盘的vector，每次通过swap将m_buffers的内容重置，目的是缩小临界区
+		BufferVectorPtr buffersToWrite;//用于帮助m_buffers写入磁盘的vector，每次通过swap将m_buffers的内容重置，目的是缩小临界区
 		buffersToWrite.reserve(16); //提前预分配
 
 		static bool once = false;
@@ -157,7 +157,7 @@ void AsyncLogging::thread_worker()
 			}
 
 			if (buffersToWrite.size() > 25)
-			{ //FIXME 需要刷入的内存块超过25个，则丢弃到只剩下两个
+			{ //FIXME 如果刷入的内存块超过25个，则丢弃到只剩下两个,后续可以加入告警通知异常
 				trace_("超出最高缓存数量，将丢弃只剩2个");
 				char buf[256];
 				snprintf(buf, sizeof buf, "Dropped log messages at %s, %zd larger buffers\n",
@@ -176,7 +176,7 @@ void AsyncLogging::thread_worker()
 			}
 			if (buffersToWrite.size() > 2)
 			{
-				buffersToWrite.resize(2); //FIXME 保留两个，可以进行资源的利用，而且就算没有两个，resize也会为你开两个空的
+				buffersToWrite.resize(2); //保留两个，可以进行资源的利用，即使没有2个，resize也会为你开两个空的
 			}
 
 			if (!newBuffer1)
