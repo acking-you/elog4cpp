@@ -40,10 +40,9 @@ void Logger::waitForDone()
 void Logger::LogFile(Config* config, context const& ctx)
 {
 	assert(config != nullptr);
-	config->log_cur_appender = Appenders::kFile;
 
 	fmt::memory_buffer buffer;
-	config->log_formatter(config, ctx, buffer);
+	config->log_formatter(config, ctx, buffer,Appenders::kFile);
 	//将数据写入Async缓冲区
 	m_logging->append(buffer.data(), static_cast<int>(buffer.size()));
 }
@@ -51,10 +50,9 @@ void Logger::LogFile(Config* config, context const& ctx)
 void Logger::LogConsole(Config* config, const context& ctx)
 {
 	assert(config != nullptr);
-	config->log_cur_appender = Appenders::kConsole;
 
 	fmt::memory_buffer buffer;
-	config->log_formatter(config, ctx, buffer);
+	config->log_formatter(config, ctx, buffer,Appenders::kConsole);
 	buffer.push_back('\0'); //with c-style
 
 	{
@@ -67,10 +65,9 @@ void Logger::LogConsole(Config* config, const context& ctx)
 void Logger::LogConsoleUnsafe(Config* config, const context& ctx)
 {
 	assert(config != nullptr);
-	config->log_cur_appender = Appenders::kConsole;
 
 	fmt::memory_buffer buffer;
-	config->log_formatter(config, ctx, buffer);
+	config->log_formatter(config, ctx, buffer,Appenders::kConsole);
 	buffer.push_back('\0'); //with c-style
 	sys::CallFPutsUnlocked(buffer.data(), stdout);
 	std::fflush(stdout);

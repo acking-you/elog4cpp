@@ -19,11 +19,10 @@ LBLOG_NAMESPACE_BEGIN
 	};
 	struct Config;
 
-	using formatter_t = std::function<void(Config*, context const&, fmt::memory_buffer&)>;
 
 	namespace formatter
 	{
-		void defaultFormatter(Config* config, context const& ctx, fmt::memory_buffer& buf);
-		void jsonFormatter(Config* config, context const& ctx, fmt::memory_buffer& buf);
+		void defaultFormatter(Config* config, context const& ctx, buffer_t& buf,Appenders appenderType);
+		void jsonFormatter(Config* config, context const& ctx, buffer_t& buf,Appenders appenderType);
 	}
 LBLOG_NAMESPACE_END

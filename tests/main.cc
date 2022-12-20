@@ -1,15 +1,12 @@
-#include <dirent.h>
-#include <fcntl.h>
-#include <pthread.h>
-#include <signal.h>
-#include <unistd.h>
+#include "../dependencies/Timer.hpp"
 
 #include "my-logger/logger.h"
 #include <chrono>
-#include <fstream>
 #include <iostream>
 #include <thread>
 #include <vector>
+#include<sys/types.h>
+#include<unistd.h>
 
 using namespace lblog;
 using namespace std::chrono_literals;
@@ -17,6 +14,9 @@ using namespace std::chrono_literals;
 // 建议不要使用多进程+多线程模型，具体原因可以看下面的链接
 // https://www.quora.com/What-happens-when-a-mutex-owner-is-forked
 // 一旦用多线程就不要用fork创建多进程，除非马上使用exec函数族切断父子进程联系
+
+const char* log_dir = "../../log/";
+
 void test_multithreadAndProcess()
 {
 	int id = fork();
@@ -26,27 +26,13 @@ void test_multithreadAndProcess()
 		exit(-1);
 	}
 GlobalConfig::instance()
-.setFilepath("../../")
+.setFilepath(log_dir)
 .setFlag(FLAGS(Flags::kStdFlags,Flags::kLongname,Flags::kThreadId));
 
-	if (id != 0) // 设置父进程的debug配置
-		GlobalConfig
-			Config::Set({ .print_flag = lblog::LthreadId,
-			.output_prefix = "父进程",
-			.output_basedir = "../../log/",
-			.before = [](auto& f)
-			{
-			  fmt::format_to(std::back_inserter(f),
-				  "你好我是before回调");
-			}});
-	else // 子进程的debug配置
-		Config::Set({ .print_flag = LthreadId,
-			.output_prefix = "子进程",
-			.output_basedir = "../../log/",
-			.end = [](auto& f)
-			{
-			  fmt::format_to(back_inserter(f), "你好我是end回调");
-			}});
+	if (id == 0) // 设置父进程的debug配置
+        GlobalConfig::instance()
+            .setFilepath(log_dir)
+            .setFlag(FLAGS(Flags::kStdFlags,Flags::kShortname,Flags::kThreadId));
 
 	std::thread th1{ []()
 					 {
@@ -93,7 +79,7 @@ GlobalConfig::instance()
 					   for (int i = 0; i < 10; i++)
 					   {
 						   std::this_thread::sleep_for(1s);
-						   fatal("线程5");
+						   warn("线程5");
 					   }
 					 }};
 	th1.join();
@@ -105,14 +91,13 @@ GlobalConfig::instance()
 
 void test_multithread()
 {
-	GlobalConfig::instance().
-		Config::Set({ .print_flag = LthreadId,
-		.output_prefix = "测试多线程",
-		.output_basedir = "../../log/",
-		.end = [](auto& f)
+    GlobalConfig::instance()
+        .setFilepath(log_dir)
+        .setFlag(FLAGS(Flags::kStdFlags,Flags::kLongname,Flags::kThreadId))
+		.setAfter([](auto& f)
 		{
 		  fmt::format_to(back_inserter(f), "你好我是end回调");
-		}});
+		});
 
 	std::thread th1{ []()
 					 {
@@ -169,35 +154,20 @@ void test_multithread()
 	th5.join();
 }
 
-void test_config()
-{
-	Config::Set({ .print_flag = lblog::LthreadId, // 设置打印的内容，有日期、时间、文件名（长、短）、行号、线程id这些选项可选
-		// （默认为LstdFlags包含Ldata |
-		// Ltime | Lshortname | Lline
-		.output_prefix = "my", // 设置输出日志的前缀名，默认为空
-		.output_basedir = "../../log/",
-		.before =
-		[](auto& f)
-		{
-		  fmt::format_to(std::back_inserter(f), "我是before");
-		},
-		.end =
-		[](auto& f)
-		{
-		  fmt::format_to(std::back_inserter(f), "我是end");
-		}});
-}
+
 
 // 测试100w行写入
 int test_lines = 1000000;
 
 void test_performance()
 {
-	Config::Set(Config{
-		.print_flag = LstdFlags | lblog::LthreadId,
-		.output_basedir = "../../log/",
-		.is_console = false,
-	});
+    GlobalConfig::instance().enableConsole(false)
+        .setFilepath(log_dir)
+        .setFlag(FLAGS(Flags::kStdFlags,Flags::kLongname,Flags::kThreadId))
+        .setAfter([](auto& f)
+                  {
+                      fmt::format_to(back_inserter(f), "你好我是end回调");
+                  });
 	for (int i = 0; i < test_lines; i++)
 	{
 		info("abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasdfsdafsdafu"
@@ -206,64 +176,62 @@ void test_performance()
 	}
 }
 
-void test_buffered_performance()
-{
-	auto out = fmt::output_file("../../log/test_bufferd.txt");
-	for (int i = 0; i < test_lines * 5; i++)
-	{
-		out.print("[INFO] {} [tid:{}] [{}:{:d}] {}",
-			detail::Util::getCurDateTime(true), ProcessInfo::GetTid(),
-			lblog::detail::GetShortName(__FILE__), __LINE__,
-			"abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasdfsdaf"
-			"sdafuroewpewm,xcv,sf\r\n");
-	}
-}
+//void test_buffered_performance()
+//{
+//	auto out = fmt::output_file("../../log/test_bufferd.txt");
+//	for (int i = 0; i < test_lines * 5; i++)
+//	{
+//		out.print("[INFO] {} [tid:{}] [{}:{:d}] {}",
+//			detail::Util::getCurDateTime(true), ProcessInfo::GetTid(),
+//			lblog::detail::GetShortName(__FILE__), __LINE__,
+//			"abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasdfsdaf"
+//			"sdafuroewpewm,xcv,sf\r\n");
+//	}
+//}
 
-void test_stl_performance()
-{
-	auto out = std::ofstream("../../log/test_stl.txt");
-	for (int i = 0; i < test_lines; i++)
-		out << "[INFO] " << detail::Util::getCurDateTime(true)
-			<< "[tid:" << ProcessInfo::GetTid() << "] ["
-			<< lblog::detail::GetShortName(__FILE__) << ":" << __LINE__ << "]"
-			<< "abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasdfsdafsda"
-			   "furoewpewm,xcv,sf\r\n";
-}
+//void test_stl_performance()
+//{
+//	auto out = std::ofstream("../../log/test_stl.txt");
+//	for (int i = 0; i < test_lines; i++)
+//		out << "[INFO] " << detail::Util::getCurDateTime(true)
+//			<< "[tid:" << ProcessInfo::GetTid() << "] ["
+//			<< lblog::detail::GetShortName(__FILE__) << ":" << __LINE__ << "]"
+//			<< "abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasdfsdafsda"
+//			   "furoewpewm,xcv,sf\r\n";
+//}
 
-void test_c_performance()
-{
-	FILE* file = fopen("../../log/test_c.txt", "a");
-	const char* data = "abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasd"
-					   "fsdafsdafuroewpewm,xcv,sf\r\n";
-	for (int i = 0; i < test_lines; i++)
-	{
-		fprintf(file, "[INFO] %s [tid:%d] [%s:%d] %s",
-			detail::Util::getCurDateTime(true), ProcessInfo::GetTid(),
-			lblog::detail::GetShortName(__FILE__), __LINE__,
-			"abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasdfsdafsd"
-			"afuroewpewm,xcv,sf\r\n");
-	}
-	fclose(file);
-}
+//void test_c_performance()
+//{
+//	FILE* file = fopen("../../log/test_c.txt", "a");
+//	const char* data = "abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasd"
+//					   "fsdafsdafuroewpewm,xcv,sf\r\n";
+//	for (int i = 0; i < test_lines; i++)
+//	{
+//		fprintf(file, "[INFO] %s [tid:%d] [%s:%d] %s",
+//			detail::Util::getCurDateTime(true), ProcessInfo::GetTid(),
+//			lblog::detail::GetShortName(__FILE__), __LINE__,
+//			"abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasdfsdafsd"
+//			"afuroewpewm,xcv,sf\r\n");
+//	}
+//	fclose(file);
+//}
 
-void test_sys_performance()
-{
-	int fd = ::open("../../log/test_sys.txt", O_RDWR | O_APPEND);
-	const char* data = "abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasd"
-					   "fsdafsdafuroewpewm,xcv,sf\r\n";
-	int n;
-	for (int i = 0; i < test_lines; i++)
-		n = ::write(fd, (char*)data, strlen(data));
-	close(fd);
-}
+//void test_sys_performance()
+//{
+//	int fd = ::open("../../log/test_sys.txt", O_RDWR | O_APPEND);
+//	const char* data = "abcdefghiksfasdajfksdajfkljdsakfjdksjfdksajfdsajdfsfasd"
+//					   "fsdafsdafuroewpewm,xcv,sf\r\n";
+//	int n;
+//	for (int i = 0; i < test_lines; i++)
+//		n = ::write(fd, (char*)data, strlen(data));
+//	close(fd);
+//}
 
 void test_multiPerformance()
 {
-	Config::Set(Config{
-		.print_flag = LstdFlags | lblog::LthreadId,
-		.output_basedir = "../../log/",
-		.is_console = false,
-	});
+	GlobalConfig::instance().enableConsole(false).setFilepath("../../").setFlag(FLAGS(Flags::kStdFlags,Flags::kLongname,Flags::kThreadId)).setBefore([](buffer_t& bf){
+           fmt::format_to(std::back_inserter(bf),"{}","我是before");
+        });
 
 	std::thread th1([&]()
 	{
@@ -300,6 +268,6 @@ void test_multiPerformance()
 
 int main()
 {
-	Timer tm;
-	test_multithreadAndProcess();
+    Timer tm;
+	test_multiPerformance();
 }

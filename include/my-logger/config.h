@@ -12,33 +12,6 @@
 
 LBLOG_NAMESPACE_BEGIN
 
-	enum class Flags : int
-	{
-		kDate = 1 << 0,
-		kTime = 1 << 1,
-		kLongname = 1 << 2,
-		kShortname = 1 << 3,
-		kLine = 1 << 4,
-		kThreadId = 1 << 5,
-		kStdFlags = kDate | kTime | kShortname | kLine
-	};
-
-	enum class Levels : int
-	{
-		kTrace,
-		kDebug,
-		kInfo,
-		kWarn,
-		kError,
-		kFatal,
-		kLevelCount
-	};
-
-	enum class Appenders : int
-	{
-		kConsole,
-		kFile
-	};
 #define F_EXPAND(x) x
 #define F_GET_MICRO(v1,v2,v3,v4,v5,v6,v7,v8,NAME,...) NAME
 #define F_PASTE(...) F_EXPAND(F_GET_MICRO(__VA_ARGS__, \
@@ -65,7 +38,7 @@ LBLOG_NAMESPACE_BEGIN
 #define FLAG_ADD(x) |CAST_INT(x)
 #define FLAGS(v1,...) CAST_FLAG(CAST_INT(v1) F_EXPAND(F_PASTE(FLAG_ADD,##__VA_ARGS__)))
 
-	using callback_t = std::function<void(fmt::memory_buffer&)>;
+
 
 	struct Config
 	{
@@ -74,7 +47,6 @@ LBLOG_NAMESPACE_BEGIN
 		formatter_t log_formatter = formatter::defaultFormatter; //默认的formatter
 		Flags log_flag = Flags::kStdFlags;
 		Levels log_level = Levels::kDebug;
-		Appenders log_cur_appender; //用于标识当前是被哪个appender使用
 
 		auto setFlag(Flags flag) -> Config&;
 

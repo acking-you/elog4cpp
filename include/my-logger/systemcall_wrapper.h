@@ -64,7 +64,6 @@ namespace sys
 	}
 
 #elif defined(__linux__)
-#include <sys/types.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 	// Code for Linux platform

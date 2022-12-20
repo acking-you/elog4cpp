@@ -128,7 +128,7 @@ LBLOG_NAMESPACE_BEGIN
 #define IS_SET(log_flag_, flags_)  (INT(log_flag_) & INT(flags_))
 	namespace formatter
 	{
-		void defaultFormatter(Config* config, context const& ctx, fmt::memory_buffer& buffer)
+		void defaultFormatter(Config* config, context const& ctx, buffer_t& buffer,Appenders outType)
 		{
 			assert(config != nullptr);
 			auto tid = ProcessInfo::GetTid();
@@ -152,7 +152,7 @@ LBLOG_NAMESPACE_BEGIN
 			}
 
 			// log level
-			if (config->log_cur_appender == Appenders::kConsole) //colorful
+			if (outType == Appenders::kConsole) //colorful
 			{
 				fmt::format_to(std::back_inserter(buffer), fg(GET_COLOR_BY_LEVEL(ctx.level)), " {}", levelText);
 			}
@@ -172,7 +172,7 @@ LBLOG_NAMESPACE_BEGIN
 					ctx.line); // log file-line
 			}
 
-			if (config->log_cur_appender == Appenders::kConsole) //colorful
+			if (outType == Appenders::kConsole) //colorful
 			{
 				if (ctx.level >= INT(Levels::kError))
 				{ // if level >= Error,get the error info
@@ -211,7 +211,7 @@ LBLOG_NAMESPACE_BEGIN
 			buffer.push_back('\n');
 		}
 
-		void jsonFormatter(Config* config, context const& ctx, fmt::memory_buffer& buffer)
+		void jsonFormatter(Config* config, context const& ctx, buffer_t& buffer,Appenders outType)
 		{
 			assert(config != nullptr);
 			char tid[10];
