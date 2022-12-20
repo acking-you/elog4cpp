@@ -25,9 +25,10 @@ void test_multithreadAndProcess()
 		fatal("error:{}", errno);
 		exit(-1);
 	}
-GlobalConfig::instance().setFilepath("../../")
+GlobalConfig::instance()
+.setFilepath("../../")
 .setFlag(FLAGS(Flags::kStdFlags,Flags::kLongname,Flags::kThreadId));
-;
+
 	if (id != 0) // 设置父进程的debug配置
 		GlobalConfig
 			Config::Set({ .print_flag = lblog::LthreadId,
