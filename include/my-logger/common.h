@@ -51,13 +51,13 @@ using callback_t = std::function<void(buffer_t&)>;
 using formatter_t = std::function<void(Config*, context const&, buffer_t&,Appenders appenderType)>;
 
 class noncopyable
-	{
-	 public:
-		noncopyable(const noncopyable&) = delete;
-		void operator=(const noncopyable&) = delete;
+{
+public:
+    noncopyable(const noncopyable&) = delete;
+    void operator=(const noncopyable&) = delete;
 
-	 protected:
-		noncopyable() = default;
-		~noncopyable() = default;
-	};
+protected:
+    noncopyable() = default;
+    ~noncopyable() = default;
+};
 LBLOG_NAMESPACE_END

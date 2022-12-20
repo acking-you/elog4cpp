@@ -10,7 +10,7 @@
 
 using namespace lblog::detail;
 
-LogFile::LogFile(std::string basename, off64_t rollSize, bool threadSafe, int flushInterval, int checkEveryN) :
+LogFile::LogFile(std::string basename, int rollSize, bool threadSafe, int flushInterval, int checkEveryN) :
 	m_basename(std::move(basename)),
 	m_rollSize(rollSize),
 	m_flushInterval(flushInterval),

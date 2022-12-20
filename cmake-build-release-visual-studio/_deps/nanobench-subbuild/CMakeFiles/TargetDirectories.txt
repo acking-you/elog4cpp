@@ -1,0 +1,3 @@
+C:/Users/Alone/CLionProjects/my-logger/cmake-build-release-visual-studio/_deps/nanobench-subbuild/CMakeFiles/nanobench-populate.dir
+C:/Users/Alone/CLionProjects/my-logger/cmake-build-release-visual-studio/_deps/nanobench-subbuild/CMakeFiles/edit_cache.dir
+C:/Users/Alone/CLionProjects/my-logger/cmake-build-release-visual-studio/_deps/nanobench-subbuild/CMakeFiles/rebuild_cache.dir

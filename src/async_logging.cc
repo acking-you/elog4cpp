@@ -1,22 +1,21 @@
 //
 // Created by Alone on 2022-9-21.
 //
-#include "my-logger/logger_util.h"
+#include <cassert>
+#include <chrono>
+#include <iostream>
+#include <memory>
+#include <utility>
+
+#include "my-logger/async_logging.h"
 #include "my-logger/log_file.h"
 #include "my-logger/logger.h"
-#include"my-logger/async_logging.h"
-
-#include <iostream>
-#include <utility>
-#include <memory>
-#include <chrono>
-
-#include <cassert>
+#include "my-logger/logger_util.h"
 
 USING_LBLOG
 USING_LBLOG_DETAIL
 
-async_logging::async_logging(std::string basename, off64_t rollSize, int flushInterval) :
+AsyncLogging::AsyncLogging(std::string basename, int rollSize, int flushInterval) :
 	m_basename(std::move(basename)),
 	m_rollSize(rollSize),
 	m_flushInterval(flushInterval),
@@ -42,18 +41,18 @@ async_logging::async_logging(std::string basename, off64_t rollSize, int flushIn
 	{
 		trace_("创建线程任务或buffer初始化失败");
 		do_done(); //需要做的额外安全处理
-		throw std::runtime_error("async_logging create thread or buffer alloc error");
+		throw std::runtime_error("AsyncLogging create thread or buffer alloc error");
 	}
 }
 
-async_logging::~async_logging()
+AsyncLogging::~AsyncLogging()
 {
 	trace_("AsyncLogging析构执行，进行资源的清理");
 	do_done();
 }
 
 //如果发生异常，则需要维护最后的资源安全退出
-void async_logging::do_done()
+void AsyncLogging::do_done()
 {
 	if (m_done)
 	{
@@ -73,13 +72,13 @@ void async_logging::do_done()
 	}
 }
 
-void async_logging::waitDone()
+void AsyncLogging::waitDone()
 {
 	do_done();
 }
 
 // 双缓冲关键代码
-void async_logging::append(const char* line, int len)
+void AsyncLogging::append(const char* line, int len)
 {
 	//下面为关键逻辑，采取双缓冲机制，如果缓存足够则push进去，否则将缓存转移到vector中待flush到磁盘
 	//虽然是这样说双缓冲，实际上不存在两个层级的缓存，第二个层级只是存储待push缓存的指针，并不会有拷贝
@@ -110,7 +109,7 @@ void async_logging::append(const char* line, int len)
 }
 
 //异步写入和内存复用
-void async_logging::thread_worker()
+void AsyncLogging::thread_worker()
 {
 	try
 	{

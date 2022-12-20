@@ -1,22 +1,27 @@
-cmake_minimum_required(VERSION 3.00)
+cmake_minimum_required(VERSION 3.14)
 project(my_logger)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_definitions(-DTRACE_ -DTEST_MAIN)
-set(TEST_MAIN ON)
+option(BUILD_UNITTEST "Build unittest." ON)
+
+set(BUILD_UNITTEST ON)
 
 add_subdirectory(dependencies/fmt EXCLUDE_ALL)
 
-include_directories(./include)
-include_directories(./dependencies/fmt/include)
-
-
-if (DEFINED TEST_MAIN)
-    add_subdirectory(tests)
-endif ()
-
 file(GLOB SRC ./src/*.cc)
 
-add_library(logger SHARED ${SRC})
-target_link_libraries(logger fmt-header-only pthread)
+add_library(my-logger  ${SRC})
+target_include_directories(my-logger PUBLIC ./include ./dependencies/fmt/include)
+
+IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    target_link_libraries(my-logger PUBLIC fmt-header-only pthread)
+    MESSAGE(STATUS "Now is Linux")
+ELSEIF(CMAKE_SYSTEM_NAME MATCHES "Windows")
+    target_link_libraries(my-logger PUBLIC fmt-header-only ws2_32)
+    MESSAGE(STATUS "Now is windows")
+ENDIF()
+
+if (BUILD_UNITTEST)
+    add_subdirectory(tests)
+endif ()

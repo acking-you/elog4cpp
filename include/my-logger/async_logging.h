@@ -18,12 +18,12 @@
 LBLOG_NAMESPACE_BEGIN
 	namespace detail
 	{
-		class async_logging : noncopyable
+		class AsyncLogging : noncopyable
 		{
 		 public:
-			explicit async_logging(std::string basename, off64_t rollSize, int flushInterval = 3);
+			explicit AsyncLogging(std::string basename, int rollSize, int flushInterval = 3);
 
-			~async_logging();
+			~AsyncLogging();
 
 			void append(const char* line, int len);
 
@@ -40,7 +40,7 @@ LBLOG_NAMESPACE_BEGIN
 			using BufferVectorPtr = std::vector<BufferPtr>;
 
 			const int m_flushInterval;
-			const off64_t m_rollSize;
+			const int m_rollSize;
 			std::atomic<bool> m_done;
 			const std::string m_basename;
 			std::unique_ptr<std::thread> m_thread;

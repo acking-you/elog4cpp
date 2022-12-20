@@ -8,12 +8,50 @@ namespace sys
 #define    W_OK    2    /* Check for write permission */
 #define    R_OK    4    /* Check for read permission */
 
-#if  defined(__WIN32__)
+#if  defined(_WIN32)
 #include<io.h>
 #include <windows.h>
 	// Code for Windows platform
 	using PidType = DWORD;
 	using TidType = DWORD;
+
+    inline auto WSAStartUp()->bool{
+        WORD wVersionRequested;
+        WSADATA wsaData;
+        int err;
+
+        /* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
+        wVersionRequested = MAKEWORD(2, 2);
+
+        err = WSAStartup(wVersionRequested, &wsaData);
+        if (err != 0) {
+            /* Tell the user that we could not find a usable */
+            /* Winsock DLL.                                  */
+            printf("WSAStartup failed with error: %d\n", err);
+            return false;
+        }
+
+        /* Confirm that the WinSock DLL supports 2.2.*/
+        /* Note that if the DLL supports versions greater    */
+        /* than 2.2 in addition to 2.2, it will still return */
+        /* 2.2 in wVersion since that is the version we      */
+        /* requested.                                        */
+
+        if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+            /* Tell the user that we could not find a usable */
+            /* WinSock DLL.                                  */
+            printf("Could not find a usable version of Winsock.dll\n");
+            WSACleanup();
+            return false;
+        }
+        return true;
+    }
+
+    struct cleanHelper{
+        ~cleanHelper(){
+            WSACleanup();
+        }
+    };
 
 	inline auto GetPid() -> PidType
 	{
@@ -25,6 +63,9 @@ namespace sys
 	}
 	inline auto GetHostname(char* name, size_t len) -> int
 	{
+        if(!WSAStartUp())
+            return -1;
+        cleanHelper h;
 		return gethostname(name, static_cast<int>(len));
 	}
 	inline auto GetLocalTime_r(time_t* timer, struct tm* tm) -> struct tm*
@@ -48,8 +89,8 @@ namespace sys
 	{
 		return _access(filename, perm);
 	}
-	inline auto CallUnlockedWrite(const void* __restrict ptr, size_t size,
-		size_t n, FILE* __restrict stream) -> size_t
+	inline auto CallUnlockedWrite(const void*  ptr, size_t size,
+		size_t n, FILE*  stream) -> size_t
 	{
 		return fwrite(ptr, size, n, stream);
 	}
@@ -58,7 +99,7 @@ namespace sys
 		(void)std::setvbuf(stream, buf, _IOFBF, size);
 	}
 
-	inline auto CallFPutsUnlocked(const char* __restrict__ str, FILE* __restrict__ file) -> int
+	inline auto CallFPutsUnlocked(const char* str, FILE*  file) -> int
 	{
 		return fputs(str, file);
 	}

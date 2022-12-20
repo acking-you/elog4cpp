@@ -2,14 +2,13 @@
 #include "my-logger/config.h"
 #include "my-logger/processinfo.h"
 #include "my-logger/logger_util.h"
-#include "fmt/color.h"
-#include "fmt/core.h"
-
 #include<cassert>
 #include<cstring>
 
 LBLOG_NAMESPACE_BEGIN
 #define LEVEL_COUNT  static_cast<int>(Levels::kLevelCount)
+
+thread_local char t_filename_buf[1024];
 
 	const char* s_level_text[LEVEL_COUNT + 1] = {
 		"[TRACE]  ",
@@ -207,7 +206,6 @@ LBLOG_NAMESPACE_BEGIN
 				config->log_after(buffer);
 			}
 
-			buffer.push_back('\r');
 			buffer.push_back('\n');
 		}
 
@@ -223,16 +221,15 @@ LBLOG_NAMESPACE_BEGIN
 															   : nullptr);
 			auto* dateText = Util::getCurDateTime(IS_SET(config->log_flag, Flags::kTime));
 			auto* text = ctx.text.c_str();
-			char file[strlen(filename) + 10];
-			sprintf(file, "%s:%d", filename, ctx.line);
+			sprintf(t_filename_buf, "%s:%d", filename, ctx.line);
 
-			s_json.text[kFilename] = file;
+			s_json.text[kFilename] = t_filename_buf;
 			s_json.text[kDate] = dateText;
 			s_json.text[kLevel] = levelText;
 			s_json.text[kText] = text;
 			if (IS_SET(config->log_flag, Flags::kThreadId))
 			{
-				sprintf(tid, "%d", ProcessInfo::GetTid());
+				sprintf(tid, "%d", CAST_INT(ProcessInfo::GetTid()));
 				s_json.text[kTid] = tid;
 			}
 
@@ -248,7 +245,6 @@ LBLOG_NAMESPACE_BEGIN
 				config->log_after(buffer);
 			}
 
-			buffer.push_back('\r');
 			buffer.push_back('\n');
 			s_json.clear();
 		}

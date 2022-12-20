@@ -29,7 +29,7 @@ public:
         auto end = std::chrono::time_point_cast<std::chrono::microseconds>(endTimepoint).time_since_epoch().count();
         auto duration = end - start;  //以微秒为单位
         double ms = duration * 0.001;//得到毫秒
-        printf("%ld us (%lf ms)\n", duration, ms);
+        printf("%lld us (%lf ms)\n", duration, ms);
         fflush(stdout);
     }
 

@@ -32,14 +32,14 @@ void FileAppender::init(std::string const& filename)
 		throw std::runtime_error(fmt::format("filedir not exist! {}", filedir));
 	}
 
-	m_file = fopen(filename.c_str(), "ae");
+	m_file = fopen(filename.c_str(), "a");
 	if (m_file == nullptr)
 	{
 		int err = ferror(m_file);
 		auto* errorInfo = Util::getErrorInfo(err);
 		trace_("FileAppender 初始化失败 error:{}", errorInfo);
-		fprintf(stderr, "FileAppender error in open file:%s erron:%s", filename.c_str(), errorInfo);
-		return;
+		fprintf(stderr, "FileAppender error in open file:%s erron:%s \r\n", filename.c_str(), errorInfo);
+        throw std::runtime_error("panic:FILE* is null");
 	}
 	trace_("设置 FILE* 缓冲区大小为{}", sizeof(m_buffer));
 	sys::CallSetBuffer(m_file, m_buffer, sizeof(m_buffer));

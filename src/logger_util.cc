@@ -12,10 +12,10 @@
 
 using namespace lblog;
 
-__thread char t_errnobuf[512];
-__thread char t_time[64];
-__thread struct tm t_tm;
-__thread time_t t_lastSecond;
+thread_local char t_errnobuf[512];
+thread_local char t_time[64];
+thread_local struct tm t_tm;
+thread_local time_t t_lastSecond;
 
 const char* Util::getCurDateTime(bool isTime, time_t* now)
 {

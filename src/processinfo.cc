@@ -20,11 +20,14 @@ sys::TidType ProcessInfo::GetTid()
 
 std::string ProcessInfo::GetHostname()
 {
-	char buf[256];
-	if (sys::GetHostname(buf, sizeof(buf)) == 0)
+	thread_local char buf[256]{};
+    if(buf[0] == 5){
+        return buf+1;
+    }
+	if (sys::GetHostname(buf+1, sizeof(buf) - 1) == 0)
 	{
-		buf[sizeof(buf) - 1] = '\0';
-		return buf;
+        buf[0] = 5;
+		return buf+1;
 	}
 	return "unknownhost";
 }
