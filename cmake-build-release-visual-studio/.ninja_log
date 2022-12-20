@@ -37,3 +37,15 @@
 33	2516	6932604707312174	tests/CMakeFiles/unittest.dir/test_and_bench.cc.obj	ae295a581d183f9e
 2462	2555	6932604707727479	my-logger.lib	f5c2d90e0d090369
 2555	3262	6932604714780124	tests/unittest.exe	85847540b9570ff1
+12	3668	6932620598048996	CMakeFiles/my-logger.dir/src/count_down_latch.cc.obj	ff28213e9f00cdd8
+2	3695	6932620598208991	CMakeFiles/my-logger.dir/src/config.cc.obj	25beba3c6f44d6f6
+89	3714	6932620598564502	CMakeFiles/my-logger.dir/src/logger_util.cc.obj	e5bc7a7b6787f908
+76	3931	6932620600040733	CMakeFiles/my-logger.dir/src/processinfo.cc.obj	5bd5aed5699103ab
+63	3952	6932620599960627	CMakeFiles/my-logger.dir/src/logger.cc.obj	15a3b0c943473de2
+41	3961	6932620600566061	CMakeFiles/my-logger.dir/src/log_file.cc.obj	c033a03641f2fabe
+21	4709	6932620604570620	CMakeFiles/my-logger.dir/src/async_logging.cc.obj	84208cc16c3ccd5d
+53	4834	6932620609650074	CMakeFiles/my-logger.dir/src/formatter.cc.obj	6e919a51cde4b00
+103	5018	6932620611534166	tests/CMakeFiles/unittest.dir/test_and_bench.cc.obj	ae295a581d183f9e
+29	5074	6932620612179331	CMakeFiles/my-logger.dir/src/file_appender.cc.obj	9046613effada24e
+5074	5178	6932620613266847	my-logger.lib	f5c2d90e0d090369
+5178	5913	6932620620587304	tests/unittest.exe	85847540b9570ff1

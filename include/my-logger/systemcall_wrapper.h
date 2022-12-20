@@ -1,5 +1,7 @@
 #pragma once
+#include "common.h"
 
+LBLOG_NAMESPACE_BEGIN
 namespace sys
 {
 
@@ -152,3 +154,4 @@ namespace sys
 #error "not supported compiler"
 #endif
 }
+LBLOG_NAMESPACE_END
