@@ -33,5 +33,5 @@ file(GLOB TEST_FILES
         )
 add_executable(unittest ${TEST_FILES})
 target_link_libraries(unittest PRIVATE gtest_main my-logger nanobench)
-target_include_directories(unittest PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(unittest PRIVATE ${PROJECT_SOURCE_DIR}/include ./third-part-logger/include)
 add_test(NAME my-logger-unittest COMMAND unittest)

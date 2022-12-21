@@ -191,9 +191,10 @@ LBLOG_NAMESPACE_END
     LOG_CONTEXT_NAME.long_filename  = __FILE__; \
     LOG_CONTEXT_NAME.short_filename = LOG_DETAIL_NAMESPACE GetShortName(__FILE__);
 
+
 #ifdef TRACE_
-// _trace用于跟踪logger日志系统内部情况
-#define trace_(fmt_, ...) \
+// LB_TRACE_用于跟踪logger日志系统内部情况
+#define LB_TRACE_(fmt_, ...) \
    do                                         \
     {                                          \
         LOG_NAMESPACE context LOG_CONTEXT_NAME;           \
@@ -202,7 +203,7 @@ LBLOG_NAMESPACE_END
         LOG_DETAIL_NAMESPACE DoInternalLog(LOG_CONTEXT_NAME);              \
     } while (false)
 
-#define trace(fmt_, ...)                  \
+#define LB_TRACE(fmt_, ...)                  \
     do                                         \
     {                                          \
         LOG_NAMESPACE context LOG_CONTEXT_NAME;           \
@@ -211,12 +212,12 @@ LBLOG_NAMESPACE_END
         LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);              \
     } while (false)
 #else
-#define trace(format, ...)
-#define trace_(format,...)
+#define LB_TRACE(format, ...)
+#define LB_TRACE_(format,...)
 #endif
 
 #ifdef DEBUG_
-#define debug(fmt_, ...)                  \
+#define LB_DEBUG(fmt_, ...)                  \
 	do                                         \
 	{                                          \
 		LOG_NAMESPACE context LOG_CONTEXT_NAME;           \
@@ -226,11 +227,11 @@ LBLOG_NAMESPACE_END
 	} while (false)
 
 #else
-#define debug(format, ...)
+#define LB_DEBUG(format, ...)
 #endif
 
 #ifdef INFO_
-#define info(fmt_, ...)                   \
+#define LB_INFO(fmt_, ...)                   \
     do                                         \
     {                                          \
         LOG_NAMESPACE context LOG_CONTEXT_NAME;           \
@@ -239,11 +240,11 @@ LBLOG_NAMESPACE_END
         LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);                    \
     } while (false)
 #else
-#define info(format, ...)
+#define LB_INFO(format, ...)
 #endif
 
 #ifdef WARN_
-#define warn(fmt_, ...)                   \
+#define LB_WARN(fmt_, ...)                   \
     do                                         \
     {                                          \
         LOG_NAMESPACE context LOG_CONTEXT_NAME;           \
@@ -252,11 +253,11 @@ LBLOG_NAMESPACE_END
         LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);                    \
     } while (false)
 #else
-#define warn(format, ...)
+#define LB_WARN(format, ...)
 #endif
 
 #ifdef ERROR_
-#define error(fmt_, ...)                  \
+#define LB_ERROR(fmt_, ...)                  \
     do                                         \
     {                                          \
         LOG_NAMESPACE context LOG_CONTEXT_NAME;           \
@@ -265,11 +266,11 @@ LBLOG_NAMESPACE_END
         LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);                    \
     } while (false)
 #else
-#define error(format, ...)
+#define LB_ERROR(format, ...)
 #endif
 
 #ifdef FATAL_
-#define fatal(fmt_, ...)                  \
+#define LB_FATAL(fmt_, ...)                  \
     do                                         \
     {                                          \
         LOG_NAMESPACE context LOG_CONTEXT_NAME;           \
@@ -278,18 +279,18 @@ LBLOG_NAMESPACE_END
         LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);                    \
     } while (false)
 #else
-#define fatal(format, ...)
+#define LB_FATAL(format, ...)
 #endif
 
 #define CHECK_NOTNULL(val) lblog::detail::CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be non NULL", (val))
 #define PTR(p) lblog::detail::CastToVoidPtr(p)
 
 #ifdef LOG_CUSTOM_ONLY
-#undef trace
-#undef debug
-#undef info
-#undef warn
-#undef error
-#undef fatal
+#undef LB_TRACE
+#undef LB_DEBUG
+#undef LB_INFO
+#undef LB_WARN
+#undef LB_ERROR
+#undef LB_FATAL
 #endif
 

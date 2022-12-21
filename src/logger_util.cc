@@ -67,7 +67,7 @@ std::string Util::getLogFileName(const std::string& basename, time_t& now)
 	filename += ProcessInfo::GetHostname();
 
 	char pidbuf[32];
-	snprintf(pidbuf, sizeof pidbuf, ".%d", ProcessInfo::GetPid());
+	snprintf(pidbuf, sizeof pidbuf, ".%d.log", ProcessInfo::GetPid());
 	filename += pidbuf;
 	return filename;
 }
