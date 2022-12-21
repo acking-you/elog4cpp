@@ -8,14 +8,20 @@
 
 #include <cstdio>
 #include<cassert>
+#include<chrono>
 #include <cstring>
 
-using namespace lblog;
+USING_LBLOG
 
 thread_local char t_errnobuf[512];
 thread_local char t_time[64];
+thread_local int t_timezone = -1;
 thread_local struct tm t_tm;
+thread_local struct tm t_gmtm;
 thread_local time_t t_lastSecond;
+
+using namespace std;
+
 
 const char* Util::getCurDateTime(bool isTime, time_t* now)
 {
@@ -30,13 +36,18 @@ const char* Util::getCurDateTime(bool isTime, time_t* now)
 		t_lastSecond = timer;
 		sys::GetLocalTime_r(&timer, &t_tm);
 	}
+    //获取时区
+    if(t_timezone == -1){
+        time_t time_utc = mktime(sys::GetGmTime_r(&timer,&t_gmtm));
+        t_timezone = static_cast<int>(timer - time_utc) / 3600;
+    }
 	int len;
 	if (isTime)
 	{
-		len = snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d %02d:%02d:%02d",
+		len = snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d %02d:%02d:%02d +%02d",
 			t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday,
-			t_tm.tm_hour, t_tm.tm_min, t_tm.tm_sec);
-		assert(len == 19);
+			t_tm.tm_hour, t_tm.tm_min, t_tm.tm_sec,t_timezone);
+		assert(len == 23);
 	}
 	else
 	{

@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 option(BUILD_UNITTEST "Build unittest." ON)
 
-set(BUILD_UNITTEST ON)
+set(BUILD_UNITTEST OFF)
 
 add_subdirectory(dependencies/fmt EXCLUDE_ALL)
 

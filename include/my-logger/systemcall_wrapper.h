@@ -78,6 +78,14 @@ namespace sys
 		}
 		return tm;
 	}
+    inline auto GetGmTime_r(time_t* timer, struct tm* tm) -> struct tm*
+    {
+        if (gmtime_s(tm, timer) < 0)
+		{
+			return nullptr;
+		}
+        return tm;
+    }
 	inline auto GetStrError_r(int err_code, char* buf, size_t len) -> char*
 	{
 		if (strerror_s(buf, len, err_code) < 0)
@@ -108,6 +116,7 @@ namespace sys
 
 #elif defined(__linux__)
 #include <sys/syscall.h>
+#include <sys/time.h>
 #include <unistd.h>
 	// Code for Linux platform
 	using PidType = pid_t;
@@ -129,6 +138,10 @@ namespace sys
 	{
 		return localtime_r(timer, tm);
 	}
+    inline auto GetGmTime_r(time_t* timer, struct tm* tm) -> struct tm*
+    {
+        return gmtime_r(timer, tm);
+    }
 	inline auto GetStrError_r(int err_code, char* buf, size_t len) -> char*
 	{
 		return strerror_r(err_code, buf, len);

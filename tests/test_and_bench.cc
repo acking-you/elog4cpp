@@ -13,8 +13,7 @@ const char* test_line = "abcdefeajalfmdafijkjsfasfdsfdnfdsaf,dasfd,smfd,fafdsfds
 void set_config(){
     GlobalConfig::instance().enableConsole(false)
         .setFilepath(log_dir)
-        .setFlag(FLAGS(Flags::kStdFlags,Flags::kShortname,Flags::kThreadId))
-        .setFormatter(lblog::formatter::jsonFormatter);
+        .setFlag(FLAGS(Flags::kStdFlags,Flags::kShortname,Flags::kThreadId));
 }
 
 void bench_start_(const char* bench_name,const std::function<void()>&bench_func){

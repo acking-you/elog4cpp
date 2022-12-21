@@ -11,13 +11,13 @@ LBLOG_NAMESPACE_BEGIN
 thread_local char t_filename_buf[1024];
 
 	const char* s_level_text[LEVEL_COUNT + 1] = {
-		"[TRACE]  ",
-		"[DEBUG]  ",
-		"[INFO]   ",
-		"[WARN]   ",
-		"[ERROR]  ",
-		"[FATAL]  ",
-		"[UNKNOWN]"
+		"[TRACE]",
+		"[DEBUG]",
+		"[INFO]",
+		"[WARN]",
+		"[ERROR]",
+		"[FATAL]",
+		"[UNKOW]"
 	};
 	const char* s_simple_text[LEVEL_COUNT + 1] = {
 		"TRC",
@@ -146,60 +146,35 @@ thread_local char t_filename_buf[1024];
 
 			if (IS_SET(logFlag, Flags::kDate)) // y-m-d
 			{
-				fmt::format_to(std::back_inserter(buffer), "{} ",
+				fmt::format_to(std::back_inserter(buffer), "[{}]",
 					Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
 			}
 
 			// log level
-			if (outType == Appenders::kConsole) //colorful
-			{
-				fmt::format_to(std::back_inserter(buffer), fg(GET_COLOR_BY_LEVEL(ctx.level)), " {}", levelText);
-			}
-			else
-			{ //nocolor
-				fmt::format_to(std::back_inserter(buffer), " {}", levelText);
-			}
+			fmt::format_to(std::back_inserter(buffer), "{}", levelText);
 
 			if (IS_SET(logFlag, Flags::kThreadId))
 			{ // log thread id
-				fmt::format_to(std::back_inserter(buffer), " [tid:{:d}] ", tid);
+				fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
 			}
 
 			if (filename != nullptr)
 			{
-				fmt::format_to(std::back_inserter(buffer), " [{}:{:d}] ", filename,
+				fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
 					ctx.line); // log file-line
 			}
 
-			if (outType == Appenders::kConsole) //colorful
-			{
-				if (ctx.level >= INT(Levels::kError))
-				{ // if level >= Error,get the error info
-					fmt::format_to(std::back_inserter(buffer),
-						fg(GET_COLOR_BY_LEVEL(ctx.level)),
-						" {} ERR:{} ",
-						ctx.text,
-						Util::getErrorInfo(errno)); // 打印提示信息
-				}
-				else
-				{
-					fmt::format_to(std::back_inserter(buffer), fg(GET_COLOR_BY_LEVEL(ctx.level)), " {} ",
-						ctx.text); // log info
-				}
-			}
-			else
-			{ //nocolor
-				if (ctx.level >= INT(Levels::kError))
-				{ // if level >= Error,get the error info
-					fmt::format_to(std::back_inserter(buffer), " {} ERR:{} ", ctx.text,
-						Util::getErrorInfo(errno)); // 打印提示信息
-				}
-				else
-				{
-					fmt::format_to(std::back_inserter(buffer), " {} ",
-						ctx.text); // log info
-				}
-			}
+
+            if (ctx.level >= INT(Levels::kError))
+            { // if level >= Error,get the error info
+                fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
+                    Util::getErrorInfo(errno));
+            }
+            else
+            {
+                fmt::format_to(std::back_inserter(buffer), ":{}",
+                    ctx.text); // log info
+            }
 
 			if (config->log_after)
 			{ // after callback
@@ -208,6 +183,88 @@ thread_local char t_filename_buf[1024];
 
 			buffer.push_back('\n');
 		}
+
+        void colorfulFormatter(Config* config, context const& ctx, buffer_t& buffer,Appenders outType)
+        {
+            assert(config != nullptr);
+            auto tid = ProcessInfo::GetTid();
+            auto* levelText = GET_LEVEL_TEXT(ctx.level);
+            const char* filename =
+                IS_SET(config->log_flag, Flags::kLongname)
+                    ? ctx.long_filename
+                    : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+                                                                   : nullptr);
+            if (config->log_before)
+            { //before call
+                config->log_before(buffer);
+            }
+
+            Flags logFlag = config->log_flag;
+
+            if (IS_SET(logFlag, Flags::kDate)) // y-m-d
+            {
+                fmt::format_to(std::back_inserter(buffer), "[{}]",
+                               Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
+            }
+
+            // log level
+            if (outType == Appenders::kConsole) //colorful
+            {
+                fmt::format_to(std::back_inserter(buffer), fg(GET_COLOR_BY_LEVEL(ctx.level)), "{}", levelText);
+            }
+            else
+            { //nocolor
+                fmt::format_to(std::back_inserter(buffer), "{}", levelText);
+            }
+
+            if (IS_SET(logFlag, Flags::kThreadId))
+            { // log thread id
+                fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
+            }
+
+            if (filename != nullptr)
+            {
+                fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
+                               ctx.line); // log file-line
+            }
+
+            if (outType == Appenders::kConsole) //colorful
+            {
+                if (ctx.level >= INT(Levels::kError))
+                { // if level >= Error,get the error info
+                    fmt::format_to(std::back_inserter(buffer),
+                                   fg(GET_COLOR_BY_LEVEL(ctx.level)),
+                                   ":{} ERR:{}",
+                                   ctx.text,
+                                   Util::getErrorInfo(errno)); // 打印提示信息
+                }
+                else
+                {
+                    fmt::format_to(std::back_inserter(buffer), fg(GET_COLOR_BY_LEVEL(ctx.level)), ":{}",
+                                   ctx.text); // log info
+                }
+            }
+            else
+            { //nocolor
+                if (ctx.level >= INT(Levels::kError))
+                { // if level >= Error,get the error info
+                    fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
+                                   Util::getErrorInfo(errno)); // 打印提示信息
+                }
+                else
+                {
+                    fmt::format_to(std::back_inserter(buffer), ":{}",
+                                   ctx.text); // log info
+                }
+            }
+
+            if (config->log_after)
+            { // after callback
+                config->log_after(buffer);
+            }
+
+            buffer.push_back('\n');
+        }
 
 		void jsonFormatter(Config* config, context const& ctx, buffer_t& buffer,Appenders outType)
 		{

@@ -23,6 +23,7 @@ struct Config;
 namespace formatter
 {
     void defaultFormatter(Config* config, context const& ctx, buffer_t& buf,Appenders appenderType);
+    void colorfulFormatter(Config* config, context const& ctx, buffer_t& buf,Appenders appenderType);
     void jsonFormatter(Config* config, context const& ctx, buffer_t& buf,Appenders appenderType);
 }
 LBLOG_NAMESPACE_END
