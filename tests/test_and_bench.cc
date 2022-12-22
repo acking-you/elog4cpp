@@ -12,7 +12,7 @@ const char* test_line = "abcdefeajalfmdafijkjsfasfdsfdnfdsaf,dasfd,smfd,fafdsfds
 
 void set_config(){
     GlobalConfig::instance().enableConsole(false)
-        .setFilepath(log_dir)
+        .setFilepath(log_dir).setFormatter(formatter::jsonFormatter)
         .setFlag(FLAGS(Flags::kStdFlags,Flags::kShortname,Flags::kThreadId));
 }
 

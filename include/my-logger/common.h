@@ -3,6 +3,7 @@
 #include "fmt/color.h"
 #include "fmt/core.h"
 #include "fmt/ranges.h"
+#include "string_view.h"
 #include <string>
 #include <functional>
 #include <ctime>
@@ -45,10 +46,46 @@ enum class Appenders : int
 };
 struct Config;
 struct context;
+class buffer_helper;
 
-using buffer_t = fmt::memory_buffer;
+using fmt_buffer_t = fmt::memory_buffer;
+using buffer_t = fmt_buffer_t;
 using callback_t = std::function<void(buffer_t&)>;
 using formatter_t = std::function<void(Config*, context const&, buffer_t&,Appenders appenderType)>;
+
+template <bool B, typename T = void>
+using enable_if_t = typename std::enable_if<B, T>::type;
+template <typename... Args>
+using format_string = fmt::basic_format_string<char, fmt::type_identity_t<Args>...>;
+
+class buffer_helper{
+public:
+    fmt_buffer_t& buf;
+    auto startWith(StringView sv) -> bool{
+        return make_view().starts_with(sv);
+    }
+    auto endWith(StringView sv) -> bool{
+        return make_view().ends_with(sv);
+    }
+    auto find(StringView sv) -> size_t{
+        return make_view().find(sv);
+    }
+    auto rfind(StringView sv) -> size_t{
+        return make_view().rfind(sv);
+    }
+    auto equal(StringView sv) -> bool{
+        return make_view() == sv;
+    }
+
+    template <typename... T>
+    void formatTo(format_string<T...> fmt,T&&... args){
+        format_to(std::back_inserter(buf),fmt,std::forward<T>(args)...);
+    }
+private:
+    auto make_view()->StringView{
+       return StringView{buf.data(),buf.size()};
+    }
+};
 
 class noncopyable
 {

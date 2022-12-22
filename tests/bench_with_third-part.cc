@@ -71,7 +71,7 @@ TEST(bench,multi_thread_spd_async){
 }
 
 TEST(bench,multi_thread_spd_sync){
-    const int n = 10000;
+    const int n = 1e5;
     auto logger = get_spdlog_sync();
     bench_start("spdlog",[&](){
         test_multi_thread(n,[&](){
