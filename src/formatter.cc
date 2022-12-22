@@ -127,7 +127,7 @@ thread_local char t_filename_buf[1024];
 #define IS_SET(log_flag_, flags_)  (INT(log_flag_) & INT(flags_))
 	namespace formatter
 	{
-		void defaultFormatter(Config* config, context const& ctx, buffer_t& buffer,Appenders outType)
+		void defaultFormatter(Config* config, context const& ctx, fmt_buffer_t & buffer,Appenders outType)
 		{
 			assert(config != nullptr);
 			auto tid = ProcessInfo::GetTid();
@@ -137,9 +137,17 @@ thread_local char t_filename_buf[1024];
 				? ctx.long_filename
 				: (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
 															   : nullptr);
+            buffer_t* outputBuffer{};
+
+            if(config->log_before|| config->log_after){
+                thread_local buffer_t t_outputBuffer;
+                t_outputBuffer.buf = &buffer;
+                outputBuffer = &t_outputBuffer;
+            }
 			if (config->log_before)
 			{ //before call
-				config->log_before(buffer);
+                assert(outputBuffer!= nullptr);
+				config->log_before(*outputBuffer);
 			}
 
 			Flags logFlag = config->log_flag;
@@ -178,13 +186,14 @@ thread_local char t_filename_buf[1024];
 
 			if (config->log_after)
 			{ // after callback
-				config->log_after(buffer);
+                assert(outputBuffer!= nullptr);
+				config->log_after(*outputBuffer);
 			}
 
 			buffer.push_back('\n');
 		}
 
-        void colorfulFormatter(Config* config, context const& ctx, buffer_t& buffer,Appenders outType)
+        void colorfulFormatter(Config* config, context const& ctx, fmt_buffer_t & buffer,Appenders outType)
         {
             assert(config != nullptr);
             auto tid = ProcessInfo::GetTid();
@@ -194,9 +203,16 @@ thread_local char t_filename_buf[1024];
                     ? ctx.long_filename
                     : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
                                                                    : nullptr);
+            buffer_t *outputBuffer{};
+            if(config->log_before|| config->log_after){
+                thread_local buffer_t t_outputBuffer;
+                t_outputBuffer.buf = &buffer;
+                outputBuffer = &t_outputBuffer;
+            }
             if (config->log_before)
             { //before call
-                config->log_before(buffer);
+                assert(outputBuffer != nullptr);
+                config->log_before(*outputBuffer);
             }
 
             Flags logFlag = config->log_flag;
@@ -260,13 +276,14 @@ thread_local char t_filename_buf[1024];
 
             if (config->log_after)
             { // after callback
-                config->log_after(buffer);
+                assert(outputBuffer!=nullptr);
+                config->log_after(*outputBuffer);
             }
 
             buffer.push_back('\n');
         }
 
-		void jsonFormatter(Config* config, context const& ctx, buffer_t& buffer,Appenders outType)
+		void jsonFormatter(Config* config, context const& ctx, fmt_buffer_t & buffer,Appenders outType)
 		{
 			assert(config != nullptr);
 			char tid[10];
@@ -284,6 +301,13 @@ thread_local char t_filename_buf[1024];
 			s_json.text[kDate] = dateText;
 			s_json.text[kLevel] = levelText;
 			s_json.text[kText] = text;
+            buffer_t* outputBuffer{};
+
+            if(config->log_before|| config->log_after){
+                thread_local buffer_t t_outputBuffer;
+                t_outputBuffer.buf = &buffer;
+                outputBuffer = &t_outputBuffer;
+            }
 			if (IS_SET(config->log_flag, Flags::kThreadId))
 			{
 				sprintf(tid, "%d", CAST_INT(ProcessInfo::GetTid()));
@@ -292,14 +316,16 @@ thread_local char t_filename_buf[1024];
 
 			if (config->log_before)
 			{ //before call
-				config->log_before(buffer);
+                assert(outputBuffer != nullptr);
+				config->log_before(*outputBuffer);
 			}
 
 			buffer.append(s_json.toJson());
 
 			if (config->log_after)
 			{ //after call
-				config->log_after(buffer);
+                assert(outputBuffer != nullptr);
+				config->log_after(*outputBuffer);
 			}
 
 			buffer.push_back('\n');

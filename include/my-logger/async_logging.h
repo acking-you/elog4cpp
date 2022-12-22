@@ -44,7 +44,7 @@ LBLOG_NAMESPACE_BEGIN
 			std::atomic<bool> m_done;
 			const std::string m_basename;
 			std::unique_ptr<std::thread> m_thread;
-			CountDownLatch m_latch; //用于保证负责刷盘的线程资源初始化完成
+			CountDownLatch m_latch; //用于确保刷盘的线程资源初始化完成
 			std::mutex m_mtx;
 			std::condition_variable m_cv;
 			BufferPtr m_curBuffer;

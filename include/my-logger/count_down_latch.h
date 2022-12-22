@@ -18,8 +18,8 @@ namespace detail
         void countDown();
         int getCount();
      private:
-        std::condition_variable m_cv;
         std::mutex m_mtx;
+        std::condition_variable m_cv;
         int m_count;
     };
 }
