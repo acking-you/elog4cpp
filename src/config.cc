@@ -49,12 +49,12 @@ auto Config::setLevel(Levels level) -> Config&
 	return *this;
 }
 
-auto Config::setBefore(std::function<void(fmt::memory_buffer&)> function) -> Config&
+auto Config::setBefore(std::function<void(buffer_t&)> function) -> Config&
 {
 	this->log_before = std::move(function);
 	return *this;
 }
-auto Config::setAfter(std::function<void(fmt::memory_buffer&)> function) -> Config&
+auto Config::setAfter(std::function<void(buffer_t&)> function) -> Config&
 {
 	this->log_after = std::move(function);
 	return *this;
