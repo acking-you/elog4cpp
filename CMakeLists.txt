@@ -3,11 +3,9 @@ project(my_logger)
 
 set(CMAKE_CXX_STANDARD 14)
 
-option(BUILD_UNITTEST "Build unittest." ON)
-
-#set(BUILD_UNITTEST ON)
-
 add_subdirectory(dependencies/fmt EXCLUDE_ALL)
+
+option(ENABLE_TEST "Build unittest." OFF)
 
 file(GLOB SRC ./src/*.cc)
 
@@ -22,6 +20,7 @@ ELSEIF(CMAKE_SYSTEM_NAME MATCHES "Windows")
     MESSAGE(STATUS "Now is windows")
 ENDIF()
 
-if (BUILD_UNITTEST)
+if (ENABLE_TEST)
+    message("BUILD_UNITTEST")
     add_subdirectory(tests)
 endif ()
