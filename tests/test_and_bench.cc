@@ -13,18 +13,21 @@ int         test_n  = 2e5;
 const char* test_line =
     "abcdefeajalfmdafijkjsfasfdsfdnfdsaf,dasfd,smfd,fafdsfdsfaf";
 
+//1.描述一下vimrc的命令
+//2.讲几个平时经常使用的技巧
+
 struct Timer
 {
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_point;
-    void    start() { start_point = std::chrono::high_resolution_clock::now(); }
+    std::chrono::time_point<std::chrono::high_resolution_clock> startPoint;
+    void    start() { startPoint = std::chrono::high_resolution_clock::now(); }
     int64_t end() const
     {
-        auto end_point = std::chrono::high_resolution_clock::now();
-        return std::chrono::time_point_cast<std::chrono::nanoseconds>(end_point)
+        auto endPoint = std::chrono::high_resolution_clock::now();
+        return std::chrono::time_point_cast<std::chrono::nanoseconds>(endPoint)
                    .time_since_epoch()
                    .count() -
                std::chrono::time_point_cast<std::chrono::nanoseconds>(
-                   start_point)
+                   startPoint)
                    .time_since_epoch()
                    .count();
     }
