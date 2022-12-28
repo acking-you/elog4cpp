@@ -3,82 +3,88 @@
 //
 
 #include "my-logger/logger_util.h"
-#include "my-logger/processinfo.h"
-#include "my-logger/systemcall_wrapper.h"
 
+#include <cassert>
 #include <cstdio>
-#include<cassert>
-#include<chrono>
 #include <cstring>
+#include <ctime>
+
+#include "my-logger/processinfo.h"
 
 USING_LBLOG
+constexpr int kSumLength = 1024;
 
-thread_local char t_errnobuf[512];
-thread_local char t_time[64];
-thread_local int t_timezone = -1;
-thread_local struct tm t_tm;
-thread_local struct tm t_gmtm;
-thread_local time_t t_lastSecond;
+thread_local char           t_filename[kSumLength];
+thread_local char           t_errnobuf[512];
+thread_local char           t_time[64];
+thread_local int            t_timezone = -1;
+thread_local struct std::tm t_tm;
+thread_local struct std::tm t_gmtm;
+thread_local time_t         t_lastSecond;
 
 using namespace std;
 
-
 const char* Util::getCurDateTime(bool isTime, time_t* now)
 {
-	time_t timer = time(0);
-	if (now != nullptr)
-	{ //减少系统调用，将此时间给外界复用
-		*now = timer;
-	}
-
-	if (t_lastSecond != timer)
-	{
-		t_lastSecond = timer;
-		sys::GetLocalTime_r(&timer, &t_tm);
-	}
-    //获取时区
-    if(t_timezone == -1){
-        time_t time_utc = mktime(sys::GetGmTime_r(&timer,&t_gmtm));
-        t_timezone = static_cast<int>(timer - time_utc) / 3600;
+    time_t timer = time(0);
+    if (now != nullptr)
+    { // to reduce system call
+        *now = timer;
     }
-	int len;
-	if (isTime)
-	{
-		len = snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d %02d:%02d:%02d +%02d",
-			t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday,
-			t_tm.tm_hour, t_tm.tm_min, t_tm.tm_sec,t_timezone);
-		assert(len == 23);
-	}
-	else
-	{
-		len = snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d",
-			t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday);
-		assert(len == 10);
-	}
-	return t_time;
+
+    if (t_lastSecond != timer)
+    {
+        t_lastSecond = timer;
+        platform::GetLocalTime_r(&timer, &t_tm);
+    }
+    // to subtract gmtime and localtime for obtain timezone
+    if (t_timezone == -1)
+    {
+        time_t time_utc = mktime(platform::GetGmTime_r(&timer, &t_gmtm));
+        t_timezone      = static_cast<int>(timer - time_utc) / 3600;
+    }
+    int len;
+    if (isTime)
+    {
+        len = snprintf(t_time, sizeof(t_time),
+                       "%4d-%02d-%02d %02d:%02d:%02d +%02d",
+                       t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday,
+                       t_tm.tm_hour, t_tm.tm_min, t_tm.tm_sec, t_timezone);
+        assert(len == 23);
+    }
+    else
+    {
+        len = snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d",
+                       t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday);
+        assert(len == 10);
+    }
+    return t_time;
 }
 
 const char* Util::getErrorInfo(int error_code)
 {
-	return sys::GetStrError_r(error_code, t_errnobuf, sizeof(t_errnobuf));
+    return platform::GetStrError_r(error_code, t_errnobuf, sizeof(t_errnobuf));
 }
 
-std::string Util::getLogFileName(const std::string& basename, time_t& now)
+// Don't have same name If it is less than one
+// second since the last refresh time
+const char* Util::getLogFileName(const char* basename, time_t& now)
 {
-	std::string filename;
+    auto baseSz = std::strlen(basename);
+    assert(baseSz < kSumLength - 200);
+    // prevent strcpy no copy if `basename == t_filename[0:baseSz]`
+    t_filename[baseSz] = '\0';
+    auto* filename     = std::strncpy(t_filename, basename, baseSz);
+    assert(filename && filename[baseSz] == '\0');
 
-	filename.reserve(basename.size() + 64);
-	filename = basename;
-	char timebuf[32];
-	struct tm tm{};
-	sys::GetLocalTime_r(&now, &tm);
-	strftime(timebuf, sizeof timebuf, ".%Y%m%d-%H%M%S.", &tm); //除非1s刷满，否则每次得到的文件名不可能相同
-	filename += timebuf;
-
-	filename += ProcessInfo::GetHostname();
-
-	char pidbuf[32];
-	snprintf(pidbuf, sizeof pidbuf, ".%d.log", ProcessInfo::GetPid());
-	filename += pidbuf;
-	return filename;
+    size_t  remainLen = kSumLength - baseSz;
+    std::tm tm{};
+    platform::GetLocalTime_r(&now, &tm);
+    size_t tsz =
+        std::strftime(filename + baseSz, remainLen, ".%Y%m%d-%H%M%S.", &tm);
+    size_t nsz = std::snprintf(filename + baseSz + tsz, remainLen - tsz,
+                               "%s.%d.log", ProcessInfo::GetHostname(),
+                               static_cast<int>(ProcessInfo::GetPid()));
+    assert(filename[baseSz + tsz + nsz] == '\0');
+    return filename;
 }

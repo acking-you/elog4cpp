@@ -1,337 +1,405 @@
-#include"my-logger/formatter.h"
+#include "my-logger/formatter.h"
+
 #include "my-logger/config.h"
-#include "my-logger/processinfo.h"
 #include "my-logger/logger_util.h"
-#include<cassert>
-#include<cstring>
+#include "my-logger/processinfo.h"
 
 LBLOG_NAMESPACE_BEGIN
-#define LEVEL_COUNT  static_cast<int>(Levels::kLevelCount)
+namespace {
+
+#define LEVEL_COUNT static_cast<int>(Levels::kLevelCount)
 
 thread_local char t_filename_buf[1024];
 
-	const char* s_level_text[LEVEL_COUNT + 1] = {
-		"[TRACE]",
-		"[DEBUG]",
-		"[INFO]",
-		"[WARN]",
-		"[ERROR]",
-		"[FATAL]",
-		"[UNKOW]"
-	};
-	const char* s_simple_text[LEVEL_COUNT + 1] = {
-		"TRC",
-		"DEB",
-		"INF",
-		"WAR",
-		"ERR",
-		"FAL",
-		"UNK"
-	};
+const char* s_level_text[LEVEL_COUNT + 1] = {
+    "[TRACE]", "[DEBUG]", "[INFO]", "[WARN]", "[ERROR]", "[FATAL]", "[UNKOW]"};
+const char* s_simple_text[LEVEL_COUNT + 1] = {"TRC", "DEB", "INF", "WAR",
+                                              "ERR", "FAL", "UNK"};
 
-	fmt::color s_color[LEVEL_COUNT + 1] = {
-		fmt::color::light_blue, fmt::color::teal, fmt::color::green, fmt::color::yellow,
-		fmt::color::red, fmt::color::purple,
-		fmt::color::orange_red, // if not in range
-	};
+fmt::color s_color[LEVEL_COUNT + 1] = {
+    fmt::color::light_blue, fmt::color::teal, fmt::color::green,
+    fmt::color::yellow,     fmt::color::red,  fmt::color::purple,
+    fmt::color::orange_red, // if not in range
+};
 
-	inline const char* GET_LEVEL_TEXT(int level, bool simple = false)
-	{
-		if (simple)
-		{
-			if (level >= LEVEL_COUNT || level < 0)
-				return s_simple_text[LEVEL_COUNT]; // level not in range
-			return s_simple_text[level];
-		}
-		if (level >= LEVEL_COUNT || level < 0)
-			return s_level_text[LEVEL_COUNT]; // level not in range
-		return s_level_text[level];
-	}
+const char* s_ansi_color[LEVEL_COUNT + 1] = {
+    "\033[36m",   // light_blue
+    "\033[34m",   // teal
+    "\033[32m",   // green
+    "\033[33m",   // yellow
+    "\033[31m",   // red
+    "\033[35m",   // purple
+    "\033[4;31m", // red and underline
+};
 
-	inline fmt::color GET_COLOR_BY_LEVEL(int level)
-	{
-		if (level >= LEVEL_COUNT || level < 0)
-			return s_color[LEVEL_COUNT]; // level not in range
-		return s_color[level];
-	}
+inline const char* GET_LEVEL_TEXT(int level, bool simple = false)
+{
+    if (simple)
+    {
+        if (level >= LEVEL_COUNT || level < 0)
+            return s_simple_text[LEVEL_COUNT]; // level not in range
+        return s_simple_text[level];
+    }
+    if (level >= LEVEL_COUNT || level < 0)
+        return s_level_text[LEVEL_COUNT]; // level not in range
+    return s_level_text[level];
+}
 
-	enum
-	{
-		kDate,
-		kLevel,
-		kTid,
-		kFilename,
-		kText,
-		kContentCount
-	};
+inline fmt::color GET_COLOR_BY_LEVEL(int level)
+{
+    if (level >= LEVEL_COUNT || level < 0)
+        return s_color[LEVEL_COUNT]; // level not in range
+    return s_color[level];
+}
+inline const char* GET_ANSI_COLOR_BY_LEVEL(int level)
+{
+    if (level >= LEVEL_COUNT || level < 0)
+        return s_ansi_color[LEVEL_COUNT]; // level not in range
+    return s_ansi_color[level];
+}
 
-	struct JsonMap
-	{
-		const char* text[kContentCount]{};
-		auto toJson() -> std::string
-		{
-			std::string json = "{";
-			for (int i = 0; i < kContentCount; i++)
-			{
-				if (!text[i])
-				{
-					continue;
-				}
-				switch (i)
-				{
-				case kDate:
-					json.append("\"time\":");
-					json.push_back('\"');
-					json.append(text[kDate]);
-					json.append("\", ");
-					break;
-				case kLevel:
-					json.append("\"level\":");
-					json.push_back('\"');
-					json.append(text[kLevel]);
-					json.append("\", ");
-					break;
-				case kTid:
-					json.append("\"tid\":");
-					json.push_back('\"');
-					json.append(text[kTid]);
-					json.append("\", ");
-					break;
-				case kFilename:
-					json.append("\"file\":");
-					json.push_back('\"');
-					json.append(text[kFilename]);
-					json.append("\", ");
-					break;
-				case kText:
-					json.append("\"message\":");
-					json.push_back('\"');
-					json.append(text[kText]);
-					json.push_back('\"');
-					break;
-				default:
-					continue;
-				}
-			}
-			json.push_back('}');
-			return json;
-		}
-		void clear()
-		{
-			memset(text, 0, sizeof(text));
-		}
-	};
-	thread_local JsonMap s_json;
+#define INT(x)                    static_cast<int>(x)
+#define IS_SET(log_flag_, flags_) (INT(log_flag_) & INT(flags_))
+} // namespace
 
-#define INT(x) static_cast<int>(x)
-#define IS_SET(log_flag_, flags_)  (INT(log_flag_) & INT(flags_))
-	namespace formatter
-	{
-		void defaultFormatter(Config* config, context const& ctx, fmt_buffer_t & buffer,Appenders outType)
-		{
-			assert(config != nullptr);
-			auto tid = ProcessInfo::GetTid();
-			auto* levelText = GET_LEVEL_TEXT(ctx.level);
-			const char* filename =
-				IS_SET(config->log_flag, Flags::kLongname)
-				? ctx.long_filename
-				: (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
-															   : nullptr);
-            buffer_t* outputBuffer{};
+namespace formatter {
+void defaultFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
+                      Appenders outType)
+{
+    assert(config != nullptr);
+    thread_local buffer_t t_outputBuffer;
+    t_outputBuffer.buf = &buffer;
+    // RAII before after call
+    auto helper        = trigger_helper(&t_outputBuffer, &config->log_before,
+                                        &config->log_after);
 
-            if(config->log_before|| config->log_after){
-                thread_local buffer_t t_outputBuffer;
-                t_outputBuffer.buf = &buffer;
-                outputBuffer = &t_outputBuffer;
-            }
-			if (config->log_before)
-			{ //before call
-                assert(outputBuffer!= nullptr);
-				config->log_before(*outputBuffer);
-			}
+    // prepare data
+    auto  tid       = ProcessInfo::GetTid();
+    auto* levelText = GET_LEVEL_TEXT(ctx.level);
+    auto* funcName =
+        IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
+    auto* filename =
+        IS_SET(config->log_flag, Flags::kLongname)
+            ? ctx.long_filename
+            : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+                                                           : nullptr);
+    Flags logFlag = config->log_flag;
+    if (IS_SET(logFlag, Flags::kDate)) // y-m-d
+    {
+        fmt::format_to(std::back_inserter(buffer), "[{}]",
+                       Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
+    }
+    // log level
+    fmt::format_to(std::back_inserter(buffer), "{}", levelText);
+    if (IS_SET(logFlag, Flags::kThreadId))
+    { // log thread id
+        fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
+    }
+    // log filename
+    if (filename != nullptr)
+    {
+        fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
+                       ctx.line); // log file-line
+    }
+    // log func_name
+    if (funcName != nullptr)
+    {
+        fmt::format_to(std::back_inserter(buffer), "[func:{}]",
+                       funcName); // log file-line
+    }
+    if (ctx.level >= INT(Levels::kError))
+    { // if level >= Error,get the error info
+        fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
+                       Util::getErrorInfo(errno));
+    }
+    else
+    {
+        fmt::format_to(std::back_inserter(buffer), ":{}",
+                       ctx.text); // log info
+    }
+}
 
-			Flags logFlag = config->log_flag;
+void colorfulFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
+                       Appenders outType)
+{
+    assert(config != nullptr);
+    thread_local buffer_t t_outputBuffer;
+    t_outputBuffer.buf = &buffer;
+    // RAII before after call
+    auto helper        = trigger_helper(&t_outputBuffer, &config->log_before,
+                                        &config->log_after);
 
-			if (IS_SET(logFlag, Flags::kDate)) // y-m-d
-			{
-				fmt::format_to(std::back_inserter(buffer), "[{}]",
-					Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
-			}
-
-			// log level
-			fmt::format_to(std::back_inserter(buffer), "{}", levelText);
-
-			if (IS_SET(logFlag, Flags::kThreadId))
-			{ // log thread id
-				fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
-			}
-
-			if (filename != nullptr)
-			{
-				fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
-					ctx.line); // log file-line
-			}
-
-
-            if (ctx.level >= INT(Levels::kError))
-            { // if level >= Error,get the error info
-                fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
-                    Util::getErrorInfo(errno));
-            }
-            else
-            {
-                fmt::format_to(std::back_inserter(buffer), ":{}",
-                    ctx.text); // log info
-            }
-
-			if (config->log_after)
-			{ // after callback
-                assert(outputBuffer!= nullptr);
-				config->log_after(*outputBuffer);
-			}
-
-			buffer.push_back('\n');
-		}
-
-        void colorfulFormatter(Config* config, context const& ctx, fmt_buffer_t & buffer,Appenders outType)
-        {
-            assert(config != nullptr);
-            auto tid = ProcessInfo::GetTid();
-            auto* levelText = GET_LEVEL_TEXT(ctx.level);
-            const char* filename =
-                IS_SET(config->log_flag, Flags::kLongname)
-                    ? ctx.long_filename
-                    : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
-                                                                   : nullptr);
-            buffer_t *outputBuffer{};
-            if(config->log_before|| config->log_after){
-                thread_local buffer_t t_outputBuffer;
-                t_outputBuffer.buf = &buffer;
-                outputBuffer = &t_outputBuffer;
-            }
-            if (config->log_before)
-            { //before call
-                assert(outputBuffer != nullptr);
-                config->log_before(*outputBuffer);
-            }
-
-            Flags logFlag = config->log_flag;
-
-            if (IS_SET(logFlag, Flags::kDate)) // y-m-d
-            {
-                fmt::format_to(std::back_inserter(buffer), "[{}]",
-                               Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
-            }
-
-            // log level
-            if (outType == Appenders::kConsole) //colorful
-            {
-                fmt::format_to(std::back_inserter(buffer), fg(GET_COLOR_BY_LEVEL(ctx.level)), "{}", levelText);
-            }
-            else
-            { //nocolor
-                fmt::format_to(std::back_inserter(buffer), "{}", levelText);
-            }
-
-            if (IS_SET(logFlag, Flags::kThreadId))
-            { // log thread id
-                fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
-            }
-
-            if (filename != nullptr)
-            {
-                fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
-                               ctx.line); // log file-line
-            }
-
-            if (outType == Appenders::kConsole) //colorful
-            {
-                if (ctx.level >= INT(Levels::kError))
-                { // if level >= Error,get the error info
-                    fmt::format_to(std::back_inserter(buffer),
-                                   fg(GET_COLOR_BY_LEVEL(ctx.level)),
-                                   ":{} ERR:{}",
-                                   ctx.text,
-                                   Util::getErrorInfo(errno)); // 打印提示信息
-                }
-                else
-                {
-                    fmt::format_to(std::back_inserter(buffer), fg(GET_COLOR_BY_LEVEL(ctx.level)), ":{}",
-                                   ctx.text); // log info
-                }
-            }
-            else
-            { //nocolor
-                if (ctx.level >= INT(Levels::kError))
-                { // if level >= Error,get the error info
-                    fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
-                                   Util::getErrorInfo(errno)); // 打印提示信息
-                }
-                else
-                {
-                    fmt::format_to(std::back_inserter(buffer), ":{}",
-                                   ctx.text); // log info
-                }
-            }
-
-            if (config->log_after)
-            { // after callback
-                assert(outputBuffer!=nullptr);
-                config->log_after(*outputBuffer);
-            }
-
-            buffer.push_back('\n');
+    // prepare data
+    auto  tid       = ProcessInfo::GetTid();
+    auto* levelText = GET_LEVEL_TEXT(ctx.level);
+    auto* funcName =
+        IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
+    auto* filename =
+        IS_SET(config->log_flag, Flags::kLongname)
+            ? ctx.long_filename
+            : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+                                                           : nullptr);
+    Flags logFlag = config->log_flag;
+    if (IS_SET(logFlag, Flags::kDate)) // y-m-d
+    {
+        fmt::format_to(std::back_inserter(buffer), "[{}]",
+                       Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
+    }
+    // log level
+    if (outType == Appenders::kConsole) // colorful
+    {
+        fmt::format_to(std::back_inserter(buffer),
+                       fg(GET_COLOR_BY_LEVEL(ctx.level)), "{}", levelText);
+    }
+    else
+    { // nocolor
+        fmt::format_to(std::back_inserter(buffer), "{}", levelText);
+    }
+    if (IS_SET(logFlag, Flags::kThreadId))
+    { // log thread id
+        fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
+    }
+    if (filename != nullptr)
+    {
+        fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
+                       ctx.line); // log file-line
+    }
+    // log func_name
+    if (funcName != nullptr)
+    {
+        fmt::format_to(std::back_inserter(buffer), "[func:{}]",
+                       funcName); // log file-line
+    }
+    if (outType == Appenders::kConsole) // colorful
+    {
+        if (ctx.level >= INT(Levels::kError))
+        { // if level >= Error,get the error info
+            fmt::format_to(std::back_inserter(buffer),
+                           fg(GET_COLOR_BY_LEVEL(ctx.level)), ":{} ERR:{}",
+                           ctx.text,
+                           Util::getErrorInfo(errno)); // 打印提示信息
         }
+        else
+        {
+            fmt::format_to(std::back_inserter(buffer),
+                           fg(GET_COLOR_BY_LEVEL(ctx.level)), ":{}",
+                           ctx.text); // log info
+        }
+    }
+    else
+    { // nocolor
+        if (ctx.level >= INT(Levels::kError))
+        { // if level >= Error,get the error info
+            fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
+                           Util::getErrorInfo(errno)); // 打印提示信息
+        }
+        else
+        {
+            fmt::format_to(std::back_inserter(buffer), ":{}",
+                           ctx.text); // log info
+        }
+    }
+}
 
-		void jsonFormatter(Config* config, context const& ctx, fmt_buffer_t & buffer,Appenders outType)
-		{
-			assert(config != nullptr);
-			char tid[10];
-			auto* levelText = GET_LEVEL_TEXT(ctx.level, true);
-			auto* filename =
-				IS_SET(config->log_flag, Flags::kLongname)
-				? ctx.long_filename
-				: (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
-															   : nullptr);
-			auto* dateText = Util::getCurDateTime(IS_SET(config->log_flag, Flags::kTime));
-			auto* text = ctx.text.c_str();
-			sprintf(t_filename_buf, "%s:%d", filename, ctx.line);
+void jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
+                   Appenders outType)
+{
+    assert(config != nullptr);
+    thread_local buffer_t t_outputBuffer;
+    t_outputBuffer.buf = &buffer;
+    // RAII before after call
+    auto helper        = trigger_helper(&t_outputBuffer, &config->log_before,
+                                        &config->log_after);
 
-			s_json.text[kFilename] = t_filename_buf;
-			s_json.text[kDate] = dateText;
-			s_json.text[kLevel] = levelText;
-			s_json.text[kText] = text;
-            buffer_t* outputBuffer{};
+    // prepare data
+    auto* dateText =
+        Util::getCurDateTime(IS_SET(config->log_flag, Flags::kTime));
+    auto* levelText = GET_LEVEL_TEXT(ctx.level, true);
+    auto* filename =
+        IS_SET(config->log_flag, Flags::kLongname)
+            ? ctx.long_filename
+            : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+                                                           : nullptr);
+    t_outputBuffer.push_back('{');
+    if (dateText)
+    {
+        t_outputBuffer.append("\"time\":");
+        t_outputBuffer.push_back('\"');
+        t_outputBuffer.append(dateText);
+        t_outputBuffer.push_back('\"');
+    }
+    if (levelText)
+    {
+        t_outputBuffer.append(", \"level\":");
+        t_outputBuffer.push_back('\"');
+        t_outputBuffer.append(levelText);
+        t_outputBuffer.push_back('\"');
+    }
+    if (IS_SET(config->log_flag, Flags::kThreadId))
+    {
+        t_outputBuffer.append(", \"tid\":");
+        t_outputBuffer.formatTo("\"{:d}\"", ProcessInfo::GetTid());
+    }
+    if (filename)
+    {
+        if (IS_SET(config->log_flag, Flags::kLine))
+        {
+            t_outputBuffer.formatTo(R"(, "file":"{}:{:d}")", filename,
+                                    ctx.line);
+        }
+        else
+        {
+            t_outputBuffer.append(", \"file\":");
+            t_outputBuffer.push_back('\"');
+            t_outputBuffer.append(filename);
+            t_outputBuffer.push_back('\"');
+        }
+    }
+    if (IS_SET(config->log_flag, Flags::kFuncName))
+    {
+        t_outputBuffer.append(", \"func\":");
+        t_outputBuffer.push_back('\"');
+        t_outputBuffer.append(ctx.func_name);
+        t_outputBuffer.push_back('\"');
+    }
+    t_outputBuffer.append(ctx.text);
+    t_outputBuffer.push_back('}');
+}
 
-            if(config->log_before|| config->log_after){
-                thread_local buffer_t t_outputBuffer;
-                t_outputBuffer.buf = &buffer;
-                outputBuffer = &t_outputBuffer;
+constexpr int OP_INT(const StringView& sv)
+{
+    int ret = 0;
+    int i   = 0;
+    while (i < sv.size()) ret += sv[i++];
+    return ret;
+}
+
+constexpr int operator""_i(const char* op, size_t len)
+{
+    return OP_INT({op, len});
+}
+// use %T:time,%t:tid,%F:filepath,%f:func, %e:error info
+//  %L:long levelText,%l:short levelText,%v:message ,%c color start %C color end
+void customStringFormatter(StringView format_str, Config* config,
+                           context const& ctx, fmt_buffer_t& buffer,
+                           Appenders outType)
+{
+    assert(config != nullptr);
+    thread_local buffer_t outputBuffer;
+    outputBuffer.buf = &buffer;
+    // RAII before after call
+    auto helper =
+        trigger_helper(&outputBuffer, &config->log_before, &config->log_after);
+
+    size_t index = format_str.find('%');
+    // not find format flag
+    if (index == std::string::npos)
+    {
+        outputBuffer.append(format_str);
+        return;
+    }
+    // start custom format
+    outputBuffer.append(format_str.substr(0, index));
+    for (;;)
+    {
+        auto op = format_str.substr(index, 2);
+        switch (OP_INT(op))
+        {
+            case "%T"_i: {
+                auto* dateText = Util::getCurDateTime(
+                    IS_SET(config->log_flag, Flags::kTime));
+                outputBuffer.append(dateText);
+                break;
             }
-			if (IS_SET(config->log_flag, Flags::kThreadId))
-			{
-				sprintf(tid, "%d", CAST_INT(ProcessInfo::GetTid()));
-				s_json.text[kTid] = tid;
-			}
+            case "%t"_i: {
+                platform::TidType tid = ProcessInfo::GetTid();
+                outputBuffer.formatTo("{:d}", tid);
+                break;
+            }
+            case "%F"_i: {
+                auto* filepath =
+                    IS_SET(config->log_flag, Flags::kLongname)
+                        ? ctx.long_filename
+                        : (IS_SET(config->log_flag, Flags::kShortname)
+                               ? ctx.short_filename
+                               : nullptr);
+                if (filepath)
+                {
+                    if (IS_SET(config->log_flag, Flags::kLine))
+                        outputBuffer.formatTo("{}:{:d}", filepath, ctx.line);
 
-			if (config->log_before)
-			{ //before call
-                assert(outputBuffer != nullptr);
-				config->log_before(*outputBuffer);
-			}
+                    else
+                        outputBuffer.append(filepath);
+                }
+                break;
+            }
+            case "%f"_i: {
+                auto* funcName = IS_SET(config->log_flag, Flags::kFuncName)
+                                     ? ctx.func_name
+                                     : nullptr;
+                if (funcName) outputBuffer.append(funcName);
+                break;
+            }
+            case "%e"_i: {
+                if (ctx.level < INT(Levels::kError)) break;
+                outputBuffer.append(Util::getErrorInfo(errno));
+            }
+            case "%L"_i: {
+                auto* longLevelText = GET_LEVEL_TEXT(ctx.level);
+                if (longLevelText) outputBuffer.append(longLevelText);
+                break;
+            }
+            case "%l"_i: {
+                auto* shortLevelText = GET_LEVEL_TEXT(ctx.level, true);
+                if (shortLevelText) outputBuffer.append(shortLevelText);
+                break;
+            }
+            case "%v"_i: {
+                outputBuffer.append(ctx.text);
+                break;
+            }
+            case "%c"_i: {
+                // only console support
+                if (outType != Appenders::kConsole) break;
+                // color start
+                outputBuffer.append(GET_ANSI_COLOR_BY_LEVEL(ctx.level));
+                break;
+            }
+            case "%C"_i: {
+                // only console support
+                if (outType != Appenders::kConsole) break;
+                // color end
+                outputBuffer.append("\033[0m");
+                break;
+            }
+            case "%%"_i: {
+                outputBuffer.push_back('%');
+                break;
+            }
+            default: {
+                outputBuffer.append(op);
+            }
+        }
+        // if the op str is last one
+        if (index + op.size() >= format_str.size())
+        {
+            format_str = {};
+            break;
+        }
+        index += op.size();
+        // push_back until ch is '%'
+        while (index < format_str.size() && format_str[index] != '%')
+            outputBuffer.push_back(format_str[index++]);
+        if (index == format_str.size()) break;
+    }
+}
 
-			buffer.append(s_json.toJson());
+using namespace std::placeholders;
+auto customFromString(StringView formatString) -> formatter_t
+{
+    return std::bind(customStringFormatter, formatString, _1, _2, _3, _4);
+}
 
-			if (config->log_after)
-			{ //after call
-                assert(outputBuffer != nullptr);
-				config->log_after(*outputBuffer);
-			}
-
-			buffer.push_back('\n');
-			s_json.clear();
-		}
-	}
+} // namespace formatter
 
 LBLOG_NAMESPACE_END
-

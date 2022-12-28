@@ -1,12 +1,10 @@
 #pragma once
-#include "common.h"
 #include "systemcall_wrapper.h"
 
 LBLOG_NAMESPACE_BEGIN
-namespace ProcessInfo
-{
-    sys::PidType GetPid();
-    sys::TidType GetTid();
-    std::string GetHostname();
-}
+namespace ProcessInfo {
+platform::PidType GetPid();
+platform::TidType GetTid();
+const char*       GetHostname();
+} // namespace ProcessInfo
 LBLOG_NAMESPACE_END

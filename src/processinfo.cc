@@ -6,28 +6,29 @@
 
 using namespace lblog;
 
-sys::PidType ProcessInfo::GetPid()
+platform::PidType ProcessInfo::GetPid()
 {
-	thread_local sys::PidType pid = sys::GetPid();
-	return pid;
+    thread_local platform::PidType pid = platform::GetPid();
+    return pid;
 }
 
-sys::TidType ProcessInfo::GetTid()
+platform::TidType ProcessInfo::GetTid()
 {
-	thread_local sys::TidType tid = sys::GetTid();
-	return tid;
+    thread_local platform::TidType tid = platform::GetTid();
+    return tid;
 }
 
-std::string ProcessInfo::GetHostname()
+const char* ProcessInfo::GetHostname()
 {
-	thread_local char buf[256]{};
-    if(buf[0] == 5){
-        return buf+1;
+    thread_local char buf[256]{};
+    if (buf[0] == -1)
+    {
+        return buf + 1;
     }
-	if (sys::GetHostname(buf+1, sizeof(buf) - 1) == 0)
-	{
-        buf[0] = 5;
-		return buf+1;
-	}
-	return "unknownhost";
+    if (platform::GetHostname(buf + 1, sizeof(buf) - 1) == 0)
+    {
+        buf[0] = -1;
+        return buf + 1;
+    }
+    return "unknownhost";
 }

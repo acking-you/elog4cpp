@@ -57,7 +57,7 @@ void Logger::LogConsole(Config* config, const context& ctx)
 
 	{
 		std::lock_guard<std::mutex> lk(m_mutex); // Lock the I/O device
-		sys::CallFPutsUnlocked(buffer.data(), stdout);
+		platform::CallFPutsUnlocked(buffer.data(), stdout);
 	}
 	std::fflush(stdout);
 }
@@ -69,7 +69,7 @@ void Logger::LogConsoleUnsafe(Config* config, const context& ctx)
 	fmt::memory_buffer buffer;
 	config->log_formatter(config, ctx, buffer,Appenders::kConsole);
 	buffer.push_back('\0'); //with c-style
-	sys::CallFPutsUnlocked(buffer.data(), stdout);
+	platform::CallFPutsUnlocked(buffer.data(), stdout);
 	std::fflush(stdout);
 }
 

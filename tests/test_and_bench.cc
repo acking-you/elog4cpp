@@ -38,15 +38,16 @@ void set_config()
     GlobalConfig::instance()
         .enableConsole(false)
         .setFilepath(log_dir)
-        .setFormatter(formatter::defaultFormatter)
+        .setFormatter(formatter::customFromString("%T - %l - tid:%t - file:%F,%f - msg:%v"))
         .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId));
 }
 
 void set_timer_config()
 {
+    auto customFormatter = formatter::customFromString("[%T][%t][\"%F\"][%f][%c%l%C]: %c[%v]%C");
     GlobalConfig::instance()
-        .enableConsole(false)
-        .setFilepath(log_dir)
+        .enableConsole(true)
+        .setFilepath(nullptr)
         .setFormatter(formatter::defaultFormatter)
         .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId))
         .setBefore([](auto& bf) {

@@ -52,12 +52,12 @@ TEST(bench, one_thread_spd_sync)
 
 TEST(bench, multi_thread_spd_async)
 {
-    const int n      = 1e4;
+    const int n      = 1e3;
     auto      logger = get_spdlog_async();
     bench_start("spdlog", [&]() {
         test_multi_thread(n, [&]() { logger->info(test_line); });
     });
-    set_timer_config();
+    set_config();
     bench_start("my-logger",
                 [&]() { test_multi_thread(n, [&]() { LB_INFO(test_line); }); });
 }
