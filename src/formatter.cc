@@ -96,13 +96,13 @@ void defaultFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
         fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
     }
     // log filename
-    if (filename != nullptr)
+    if (filename)
     {
         fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
                        ctx.line); // log file-line
     }
     // log func_name
-    if (funcName != nullptr)
+    if (funcName)
     {
         fmt::format_to(std::back_inserter(buffer), "[func:{}]",
                        funcName); // log file-line
@@ -159,13 +159,13 @@ void colorfulFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
     { // log thread id
         fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
     }
-    if (filename != nullptr)
+    if (filename)
     {
         fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
                        ctx.line); // log file-line
     }
     // log func_name
-    if (funcName != nullptr)
+    if (funcName)
     {
         fmt::format_to(std::back_inserter(buffer), "[func:{}]",
                        funcName); // log file-line
@@ -215,6 +215,8 @@ void jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
     auto* dateText =
         Util::getCurDateTime(IS_SET(config->log_flag, Flags::kTime));
     auto* levelText = GET_LEVEL_TEXT(ctx.level, true);
+    auto* funcName =
+        IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
     auto* filename =
         IS_SET(config->log_flag, Flags::kLongname)
             ? ctx.long_filename
@@ -255,15 +257,14 @@ void jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
             t_outputBuffer.push_back('\"');
         }
     }
-    if (IS_SET(config->log_flag, Flags::kFuncName))
+    if (funcName)
     {
         t_outputBuffer.append(", \"func\":");
         t_outputBuffer.push_back('\"');
-        t_outputBuffer.append(ctx.func_name);
+        t_outputBuffer.append(funcName);
         t_outputBuffer.push_back('\"');
     }
-    t_outputBuffer.append(ctx.text);
-    t_outputBuffer.push_back('}');
+    t_outputBuffer.formatTo(R"(, "message":"{}"})", ctx.text);
 }
 
 constexpr int OP_INT(const StringView& sv)
@@ -383,7 +384,6 @@ void customStringFormatter(StringView format_str, Config* config,
         // if the op str is last one
         if (index + op.size() >= format_str.size())
         {
-            format_str = {};
             break;
         }
         index += op.size();
