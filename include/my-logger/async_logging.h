@@ -42,12 +42,13 @@ private:
     std::atomic<bool>            m_done;
     const char*                  m_basename;
     std::unique_ptr<std::thread> m_thread;
-    CountDownLatch m_latch; // 用于确保刷盘的线程资源初始化完成
-    std::mutex     m_mtx;
-    std::condition_variable m_cv;
-    BufferPtr               m_curBuffer;
-    BufferPtr               m_nextBuffer;
-    BufferVectorPtr         m_buffers;
+    // 用于确保刷盘的线程资源初始化完成
+    CountDownLatch               m_latch;
+    std::mutex                   m_mtx;
+    std::condition_variable      m_cv;
+    BufferPtr                    m_curBuffer;
+    BufferPtr                    m_nextBuffer;
+    BufferVectorPtr              m_buffers;
 };
 } // namespace detail
 LBLOG_NAMESPACE_END

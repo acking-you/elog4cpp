@@ -270,10 +270,8 @@ void jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
 
 constexpr int OP_INT(const StringView& sv)
 {
-    int ret = 0;
-    int i   = 0;
-    while (i < sv.size()) ret += sv[i++];
-    return ret;
+    return sv.empty() ? 0
+                      : sv[sv.size() - 1] + OP_INT({sv.data(), sv.size() - 1});
 }
 
 constexpr int operator""_i(const char* op, size_t len)

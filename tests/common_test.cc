@@ -29,8 +29,8 @@ TEST(common_test,OutputBuffer){
         fmt_buffer_t buffer;
         buffer_t out(&buffer);
         out.setContext("String");
-        EXPECT_EQ(nonstd::any_cast<const char*>(out.getContext()),"String");
+        EXPECT_EQ(any_cast<const char*>(out.getContext()),"String");
         out.setContext(324);
-        EXPECT_EQ(nonstd::any_cast<int>(out.getContext()),324);
+        EXPECT_EQ(any_cast<int>(out.getContext()),324);
     }
 }

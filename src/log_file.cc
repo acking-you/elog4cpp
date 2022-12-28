@@ -16,7 +16,7 @@ LogFile::LogFile(const char* basename, int rollSize, bool threadSafe,
       m_rollSize(rollSize),
       m_flushInterval(flushInterval),
       m_checkEveryN(checkEveryN),
-      m_mtx(threadSafe ? std::make_unique<std::mutex>() : nullptr)
+      m_mtx(threadSafe ? lblog::make_unique<std::mutex>() : nullptr)
 {
     rollFile();
 }
@@ -103,6 +103,6 @@ void LogFile::rollFile(const time_t* cache_now)
         m_lastRoll   = now;
         m_lastFlush  = now;
         m_lastPeriod = start;
-        m_file = std::make_unique<FileAppender>(filename); // 创建新的文件
+        m_file = lblog::make_unique<FileAppender>(filename); // 创建新的文件
     }
 }

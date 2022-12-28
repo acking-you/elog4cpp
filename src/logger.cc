@@ -26,9 +26,9 @@ void Logger::init_data()
 	// Determine whether to output logs to a file based on the config
 	if (GLOB_CONFIG.log_filepath != nullptr)
 	{
-		m_logging = std::make_unique<AsyncLogging>(GLOB_CONFIG.log_filepath,
-			GLOB_CONFIG.log_rollSize,
-			GLOB_CONFIG.log_flushInterval);
+        m_logging = lblog::make_unique<AsyncLogging>(
+            GLOB_CONFIG.log_filepath, GLOB_CONFIG.log_rollSize,
+            GLOB_CONFIG.log_flushInterval);
 	}
 }
 

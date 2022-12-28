@@ -50,13 +50,13 @@ void set_timer_config()
         .setFilepath(nullptr)
         .setFormatter(customFormatter)
         .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId))
-        .setBefore([](auto& bf) {
+        .setBefore([](buffer_t & bf) {
             bf.setContext(Timer{});
-            auto& tm = nonstd::any_cast<Timer>(bf.getMutableContext());
+            auto& tm = any_cast<Timer&>(bf.getMutableContext());
             tm.start();
         })
-        .setAfter([](auto& bf) {
-            auto& tm      = nonstd::any_cast<Timer>(bf.getMutableContext());
+        .setAfter([](buffer_t & bf) {
+            auto& tm      = any_cast<Timer&>(bf.getMutableContext());
             int   consume = tm.end();
             bf.formatTo("-----format takes:{}ns", consume);
         });

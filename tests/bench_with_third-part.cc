@@ -7,13 +7,13 @@
 #include "spdlog/async.h"
 #include "my-logger/logger.h"
 
-auto get_spdlog_sync()
+std::shared_ptr<spdlog::logger> get_spdlog_sync()
 {
     auto logger = spdlog::basic_logger_mt("sync_log", "../../log/test.log");
     logger->set_pattern("[%Y-%m-%d %H:%M:%S.%f %z][tid%t][%@,%!][%n][%l]: %v");
     return logger;
 }
-inline auto get_spdlog_async()
+inline std::shared_ptr<spdlog::logger> get_spdlog_async()
 {
     auto logger = spdlog::basic_logger_mt<spdlog::async_factory>(
         "async_log", "../../log/test.log");
@@ -34,7 +34,7 @@ TEST(bench, one_thread_spd_async)
     });
     set_config();
     bench_start("my-logger",
-                [&]() { test_one_thread(n, [&]() { LB_INFO(test_line); }); });
+                [&]() { test_one_thread(n, [&]() { LB_INFO("{}",test_line); }); });
 }
 
 TEST(bench, one_thread_spd_sync)
@@ -47,7 +47,7 @@ TEST(bench, one_thread_spd_sync)
     });
     set_config();
     bench_start("my-logger",
-                [&]() { test_one_thread(n, [&]() { LB_INFO(test_line); }); });
+                [&]() { test_one_thread(n, [&]() { LB_INFO("{}",test_line); }); });
 }
 
 TEST(bench, multi_thread_spd_async)
@@ -59,7 +59,7 @@ TEST(bench, multi_thread_spd_async)
     });
     set_config();
     bench_start("my-logger",
-                [&]() { test_multi_thread(n, [&]() { LB_INFO(test_line); }); });
+                [&]() { test_multi_thread(n, [&]() { LB_INFO("{}",test_line); }); });
 }
 
 TEST(bench, multi_thread_spd_sync)
@@ -74,7 +74,7 @@ TEST(bench, multi_thread_spd_sync)
     set_timer_config();
     bench_start("my-logger",[&](){
         test_multi_thread(n,[&](){
-            LB_INFO(test_line);
+            LB_INFO("{}",test_line);
         });
     });
 }

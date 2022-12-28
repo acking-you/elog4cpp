@@ -1,7 +1,9 @@
 #pragma once
+#include <cassert>
 #include <cstdint>
 #include <ctime>
 #include <functional>
+#include <memory>
 #include <string>
 
 #include "any.h"
@@ -13,6 +15,15 @@
 #include "string_view.h"
 
 LBLOG_NAMESPACE_BEGIN
+#if __cplusplus == 201103l
+template <typename T, typename... Args>
+auto make_unique(Args&&... args) -> std::unique_ptr<T>
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+#else
+using std::make_unique;
+#endif
 
 enum class Flags : int
 {
@@ -77,11 +88,21 @@ public:
     explicit buffer_helper(fmt_buffer_t* fmt_buf) : buf(fmt_buf) {}
     auto startWith(const StringView& sv) -> bool
     {
-        return make_view().starts_with(sv);
+        auto buf_sv = make_view();
+        if (sv.size() > buf_sv.size())
+        {
+            return false;
+        }
+        return buf_sv.substr(0, sv.size()) == sv;
     }
     auto endWith(const StringView& sv) -> bool
     {
-        return make_view().ends_with(sv);
+        auto buf_sv = make_view();
+        if (sv.size() > buf_sv.size())
+        {
+            return false;
+        }
+        return buf_sv.substr(buf_sv.size() - sv.size(), sv.size()) == sv;
     }
     auto find(const StringView& sv) -> size_t { return make_view().find(sv); }
     auto rfind(const StringView& sv) -> size_t { return make_view().rfind(sv); }
