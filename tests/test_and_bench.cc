@@ -48,7 +48,7 @@ void set_timer_config()
     GlobalConfig::instance()
         .enableConsole(true)
         .setFilepath(nullptr)
-        .setFormatter(formatter::jsonFormatter)
+        .setFormatter(customFormatter)
         .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId))
         .setBefore([](auto& bf) {
             bf.setContext(Timer{});

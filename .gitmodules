@@ -1,3 +1,6 @@
 [submodule "tests/third-part-logger"]
 	path = tests/third-part-logger
 	url = https://github.com/gabime/spdlog.git
+[submodule "dependencies/fmt"]
+    path = dependencies/fmt
+    url = https://github.com/fmtlib/fmt.git
