@@ -264,7 +264,8 @@ void jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
         t_outputBuffer.append(funcName);
         t_outputBuffer.push_back('\"');
     }
-    t_outputBuffer.formatTo(R"(, "message":"{}"})", ctx.text);
+    t_outputBuffer.formatTo(R"(, "message":"{}")", ctx.text);
+    t_outputBuffer.push_back('}');
 }
 
 constexpr int OP_INT(const StringView& sv)

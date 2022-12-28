@@ -38,7 +38,7 @@ void set_config()
     GlobalConfig::instance()
         .enableConsole(false)
         .setFilepath(log_dir)
-        .setFormatter(formatter::customFromString("%T - %l - tid:%t - file:%F,%f - msg:%v"))
+        .setFormatter(formatter::jsonFormatter)
         .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId));
 }
 
@@ -48,7 +48,7 @@ void set_timer_config()
     GlobalConfig::instance()
         .enableConsole(true)
         .setFilepath(nullptr)
-        .setFormatter(formatter::defaultFormatter)
+        .setFormatter(formatter::jsonFormatter)
         .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId))
         .setBefore([](auto& bf) {
             bf.setContext(Timer{});

@@ -1,10 +1,10 @@
 #pragma once
 
-#define LBLOG_NAMESPACE lblog
+#define LBLOG_NAMESPACE       lblog
 #define LBLOG_NAMESPACE_BEGIN namespace LBLOG_NAMESPACE {
-#define LBLOG_NAMESPACE_END  }
-#define USING_LBLOG using namespace LBLOG_NAMESPACE;
-#define USING_LBLOG_DETAIL  using namespace LBLOG_NAMESPACE::detail;
+#define LBLOG_NAMESPACE_END   }
+#define USING_LBLOG           using namespace LBLOG_NAMESPACE;
+#define USING_LBLOG_DETAIL    using namespace LBLOG_NAMESPACE::detail;
 
 #define F_EXPAND(x)                                            x
 #define F_GET_MICRO(v1, v2, v3, v4, v5, v6, v7, v8, NAME, ...) NAME

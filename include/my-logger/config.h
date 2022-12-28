@@ -6,7 +6,6 @@
 
 LBLOG_NAMESPACE_BEGIN
 
-
 struct Config
 {
     callback_t log_before;

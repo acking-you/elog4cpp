@@ -16,10 +16,10 @@ public:
     // 'e' 代表O_CLOEXEC，可以防止多进程中文件描述符暴露给子进程
     explicit FileAppender(const char* filename);
     ~FileAppender();
-    void append(const char* line, size_t len);
-    void flush();
-    size_t  writtenBytes() const { return m_writenBytes; }
-    void resetWritten() { m_writenBytes = 0; }
+    void   append(const char* line, size_t len);
+    void   flush();
+    size_t writtenBytes() const { return m_writenBytes; }
+    void   resetWritten() { m_writenBytes = 0; }
 
 private:
     size_t write(const char* line, size_t len);

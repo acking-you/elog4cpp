@@ -1,17 +1,19 @@
 #pragma once
 #include "micros.h"
 #if defined(_WIN32)
-#include <cstdio>
-#include <ctime>
 #include <io.h>
 #include <windows.h>
-#elif defined(__linux__)
+
 #include <cstdio>
 #include <ctime>
-#include <cstring>
+#elif defined(__linux__)
 #include <sys/syscall.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#include <cstdio>
+#include <cstring>
+#include <ctime>
 #endif
 
 LBLOG_NAMESPACE_BEGIN
@@ -76,7 +78,7 @@ inline auto GetHostname(char* name, size_t len) -> int
     cleanHelper h;
     return gethostname(name, static_cast<int>(len));
 }
-inline auto GetLocalTime_r(std::time_t* timer,std::tm* tm) -> std::tm*
+inline auto GetLocalTime_r(std::time_t* timer, std::tm* tm) -> std::tm*
 {
     if (localtime_s(tm, timer) < 0)
     {
@@ -159,13 +161,12 @@ inline void CallSetBuffer(FILE* stream, char* buf, unsigned size)
 {
     ::setbuffer(stream, buf, size);
 }
-inline auto CallFPutsUnlocked(const char*  str,
-                              FILE* file) -> int
+inline auto CallFPutsUnlocked(const char* str, FILE* file) -> int
 {
     return ::fputs_unlocked(str, file);
 }
 #else
 #error "not supported compiler"
 #endif
-} // namespace sys
+} // namespace platform
 LBLOG_NAMESPACE_END
