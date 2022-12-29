@@ -312,6 +312,7 @@ void customStringFormatter(StringView format_str, Config* config,
                 break;
             }
             case "%t"_i: {
+                //TODO to use config?
                 platform::TidType tid = ProcessInfo::GetTid();
                 outputBuffer.formatTo("{:d}", tid);
                 break;

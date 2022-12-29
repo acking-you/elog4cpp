@@ -9,7 +9,28 @@
 * [整体架构](#整体架构)
 
 # 使用教程
+想要从项目中引入该库，可以在cmake中简单的加入下面这几行代码，然后把my-logger链接到项目中即可。
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+        my-logger
+        GIT_REPOSITORY https://github.com/ACking-you/my-logger.git
+        GIT_TAG v1.6.2
+        GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(my-logger)
+```
 
+上面的cmake语句可能有些国人由于网络环境无法获取，我在gitee也建了个仓库供大家使用，对应的cmake如下：
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+        my-logger
+        GIT_REPOSITORY https://gitee.com/acking-you/my-logger.git
+        GIT_TAG v1.6.2
+        GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(my-logger)
+```
+## 除以上引入教程外，下面的内容均已无效(之后抽时间再更新使用文档)
 ## 如何添加到项目中使用
 
 输入以下命令得到项目文件
