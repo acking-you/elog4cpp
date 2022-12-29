@@ -30,6 +30,7 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
 ENDIF ()
 
 if (ENABLE_TEST)
+    enable_testing()
     message("BUILD_UNITTEST")
     add_subdirectory(tests)
 endif ()
