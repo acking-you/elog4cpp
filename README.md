@@ -104,7 +104,7 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
 > 如下，为整个日志的所有配置项目，当然你也可以不进行配置，也有对应的默认值
 
 ```cpp
-#include"Logger.h"
+#include"LoggerImpl.h"
 
 int main(){
 Config::Set({
@@ -137,7 +137,7 @@ update：更新了异步日志后，你只需指定需要输出的文件夹，�
 
 ```cpp
 #define LOG_LIMIT_WARN
-#include "Logger.h"
+#include "LoggerImpl.h"
 
 int main(){
     debug("hhh"); //无效
@@ -159,7 +159,7 @@ int main(){
 [fmt官方文档](https://fmt.dev/latest/index.html)
 
 ```cpp
-#include"Logger.h"
+#include"LoggerImpl.h"
 
 int main(){
     debug("hello {}","world");
@@ -184,7 +184,7 @@ update：由于为了适应双缓冲异步输出的后台服务，对回调函�
 中的 `test_multithreadAndProcess` 函数。
 
 ```cpp
-#include"Logger.h"
+#include"LoggerImpl.h"
 using namespace lblog;
 int main(){
     Config::Set({

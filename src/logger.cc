@@ -8,20 +8,20 @@ USING_LBLOG_DETAIL
 
 #define GLOB_CONFIG lblog::GlobalConfig::instance()
 
-Logger::Logger()
+LoggerImpl::LoggerImpl()
 {
-	init_data();
+    init_data();
 }
 
-Logger::~Logger() = default;
+LoggerImpl::~LoggerImpl() = default;
 
-Logger& Logger::GetInstance()
+LoggerImpl& LoggerImpl::GetInstance()
 {
-	static Logger logger;
+	static LoggerImpl logger;
 	return logger;
 }
 
-void Logger::init_data()
+void LoggerImpl::init_data()
 {
 	// Determine whether to output logs to a file based on the config
 	if (GLOB_CONFIG.log_filepath != nullptr)
@@ -32,12 +32,12 @@ void Logger::init_data()
 	}
 }
 
-void Logger::waitForDone()
+void LoggerImpl::waitForDone()
 {
 	if (m_logging) m_logging->waitDone();
 }
 
-void Logger::LogFile(Config* config, context const& ctx)
+void LoggerImpl::LogFile(Config* config, context const& ctx)
 {
 	assert(config != nullptr);
 
@@ -47,7 +47,7 @@ void Logger::LogFile(Config* config, context const& ctx)
 	m_logging->append(buffer.data(), static_cast<int>(buffer.size()));
 }
 
-void Logger::LogConsole(Config* config, const context& ctx)
+void LoggerImpl::LogConsole(Config* config, const context& ctx)
 {
 	assert(config != nullptr);
 
@@ -62,7 +62,7 @@ void Logger::LogConsole(Config* config, const context& ctx)
 	std::fflush(stdout);
 }
 
-void Logger::LogConsoleUnsafe(Config* config, const context& ctx)
+void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
 {
 	assert(config != nullptr);
 
@@ -73,7 +73,7 @@ void Logger::LogConsoleUnsafe(Config* config, const context& ctx)
 	std::fflush(stdout);
 }
 
-void Logger::DoInternalLog(const context& ctx)
+void LoggerImpl::DoInternalLog(const context& ctx)
 {
 	if (GLOB_CONFIG.log_level != Levels::kTrace)
 	{
@@ -86,13 +86,13 @@ void Logger::DoInternalLog(const context& ctx)
 }
 
 //全局config logger输出
-void Logger::DoLog(context const& ctx)
+void LoggerImpl::DoLog(context const& ctx)
 {
 	DoConfigLog(&GLOB_CONFIG, ctx);
 }
 
 //自定义config logger输出
-void Logger::DoConfigLog(Config* config, const context& ctx)
+void LoggerImpl::DoConfigLog(Config* config, const context& ctx)
 {
 	assert(config != nullptr);
 	//FIXME 输出到控制台没有进行任何性能优化，输出控制台方便开发时调试，输出到文件可以方便后续问题的跟踪

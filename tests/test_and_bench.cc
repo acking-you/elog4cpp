@@ -13,8 +13,8 @@ int         test_n  = 2e5;
 const char* test_line =
     "abcdefeajalfmdafijkjsfasfdsfdnfdsaf,dasfd,smfd,fafdsfdsfaf";
 
-//1.描述一下vimrc的命令
-//2.讲几个平时经常使用的技巧
+
+#define LB_INFO  Log(lblog::kInfo).printf
 
 struct Timer
 {
@@ -39,7 +39,7 @@ void set_config()
         .enableConsole(false)
         .setFilepath(log_dir)
         .setFormatter(formatter::jsonFormatter)
-        .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId));
+        .setFlag(kStdFlags+kShortname);
 }
 
 void set_timer_config()
@@ -47,9 +47,9 @@ void set_timer_config()
     auto customFormatter = formatter::customFromString("[%T][%t][\"%F\"][%f][%c%l%C]: %c[%v]%C");
     GlobalConfig::instance()
         .enableConsole(true)
-        .setFilepath(nullptr)
+        .setFilepath("../../log/")
         .setFormatter(customFormatter)
-        .setFlag(FLAGS(Flags::kStdFlags, Flags::kShortname, Flags::kThreadId))
+        .setFlag(Flags::kStdFlags+Flags::kShortname+Flags::kThreadId)
         .setBefore([](buffer_t & bf) {
             bf.setContext(Timer{});
             auto& tm = any_cast<Timer&>(bf.getMutableContext());
@@ -65,12 +65,14 @@ void set_timer_config()
 TEST(test, timer_logger)
 {
     set_timer_config();
+    auto info =Log(lblog::kInfo);
+    auto warn = Log(lblog::kWarn);
     for (int i = 0; i < 10; i++)
     {
         Timer tm;
         tm.start();
-        LB_INFO("test1");
-        LB_WARN("sum of time:{}ns", tm.end());
+        info.with().println("test1","test2","test3",std::vector<int>{32,32,23,3});
+        warn.printf("sum of time:{}ns", tm.end());
     }
 }
 
@@ -83,20 +85,27 @@ void bench_start_(const char*                  bench_name,
 void test_multi_thread_performance()
 {
     set_config();
-    std::thread th1{[]() {
-        for (int i = 0; i < test_n; i++) LB_WARN("data:{},thread1", test_line);
+    auto warn = Log(lblog::kWarn);
+    std::thread th1{[a = std::move(warn)]() {
+        for (int i = 0; i < test_n; i++) a.with().printf("data:{},thread1", test_line);
     }};
     std::thread th2{[]() {
-        for (int i = 0; i < test_n; i++) LB_INFO("data:{},thread2", test_line);
+      auto info = Log(lblog::kInfo);
+        for (int i = 0; i < test_n; i++) info.with().printf("data:{},thread2", test_line);
     }};
     std::thread th3{[]() {
-        for (int i = 0; i < test_n; i++) LB_ERROR("data:{},thread3", test_line);
+      auto error = Log(lblog::kError);
+        for (int i = 0; i < test_n; i++) error.with().printf("data:{},thread3", test_line);
     }};
-    std::thread th4{[]() {
-        for (int i = 0; i < test_n; i++) LB_INFO("data:{},thread4", test_line);
+    std::thread th4{[&]() {
+
+      auto info = Log(lblog::kInfo);
+        for (int i = 0; i < test_n; i++) info.with().printf("data:{},thread4", test_line);
     }};
-    std::thread th5{[]() {
-        for (int i = 0; i < test_n; i++) LB_INFO("data:{},thread5", test_line);
+    std::thread th5{[&]() {
+
+      auto info = Log(lblog::kInfo);
+        for (int i = 0; i < test_n; i++) info.with().printf("data:{},thread5", test_line);
     }};
     th1.join();
     th2.join();
@@ -113,6 +122,7 @@ void test_one_thread_performance()
 
 TEST(bench,nanobench)
 {
-    bench_start_("multi_thread",test_multi_thread_performance);
-    bench_start_("single_thread",test_one_thread_performance);
+//    bench_start_("multi_thread",test_multi_thread_performance);
+//    bench_start_("single_thread",test_one_thread_performance);
+    test_multi_thread_performance();
 }

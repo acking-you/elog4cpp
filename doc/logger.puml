@@ -30,9 +30,9 @@ class FixedBuffer<int>{
     + reset()
 }
 
-class Logger{
+class LoggerImpl{
     - unique_ptr<AsyncLogging> m_logging
-    +GetInstance(): Logger&
+    +GetInstance(): LoggerImpl&
     +DoLog(context const &ctx)
     +LogFile(context const& ctx)
     +LogConsole(context const& ctx)
@@ -97,8 +97,8 @@ class FileAppender{
      - write(line,len)
      - init(basename)
 }
-Logger -.|> noncopyable
-Logger --o AsyncLogging
+LoggerImpl -.|> noncopyable
+LoggerImpl --o AsyncLogging
 
 AsyncLogging --|> LogFile
 

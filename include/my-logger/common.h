@@ -1,4 +1,5 @@
 #pragma once
+#include <cstring>
 #include <cassert>
 #include <cstdint>
 #include <ctime>
@@ -25,7 +26,7 @@ auto make_unique(Args&&... args) -> std::unique_ptr<T>
 using std::make_unique;
 #endif
 
-enum class Flags : int
+enum Flags
 {
     kDate      = 1 << 0,
     kTime      = 1 << 1,
@@ -37,7 +38,9 @@ enum class Flags : int
     kStdFlags  = kDate | kTime | kShortname | kLine | kFuncName
 };
 
-enum class Levels : int
+
+
+enum Levels
 {
     kTrace,
     kDebug,
@@ -48,11 +51,24 @@ enum class Levels : int
     kLevelCount
 };
 
-enum class Appenders : int
+enum Appenders
 {
     kConsole,
     kFile
 };
+
+inline Flags operator+(Flags lhs, Flags rhs){
+    return static_cast<Flags>(lhs|rhs);
+}
+
+inline Levels operator+(Levels lhs, Levels rhs){
+    return static_cast<Levels>(lhs|rhs);
+}
+
+inline Appenders operator+(Appenders lhs, Appenders rhs){
+    return static_cast<Appenders>(lhs|rhs);
+}
+
 struct Config;
 struct context;
 class buffer_helper;
@@ -73,7 +89,7 @@ using format_string =
 struct context
 { // 用于传递每次输出内容的上下文
     int         level;
-    int         line;
+    int         line{};
     const char* short_filename{};
     const char* long_filename{};
     const char* func_name{};

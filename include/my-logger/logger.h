@@ -1,85 +1,29 @@
 #pragma once
 #include "async_logging.h"
 #include "config.h"
+#include "processinfo.h"
+#include "source_location.h"
 
 LBLOG_NAMESPACE_BEGIN
-/**
- * @debug
- * 默认release模式下会屏蔽debug的输出
- *
- * @LOG_LIMIT_WARN
- * 设置warn以上等级输出
- *
- * @LOG_LIMT_ERROR
- * 设置error以上等级输出
- *
- * @LOG_CUSTOM_ONLY
- * 取消所有预定义的宏，自定义实现自己的logger
- */
-// 定义后可在控制台上得到日志系统的运行情况
-#ifdef LOG_TRACE
-#define TRACE_
-#endif
-// 默认debug模式下
-#ifndef NDEBUG
 
-#define DEBUG_
-#define INFO_
-#define WARN_
-#define ERROR_
-#define FATAL_
-
-#endif
-
-// 默认release模式下
-#ifdef NDEBUG
-
-#undef DEBUG_
-#define INFO_
-#define WARN_
-#define ERROR_
-#define FATAL_
-
-#endif
-
-#ifdef LOG_LIMIT_WARN // 设置warn及以上才能记录
-
-#undef DEBUG_
-#undef INFO_
-#define WARN_
-#define ERROR_
-#define FATAL_
-
-#endif
-
-#ifdef LOG_LIMIT_ERROR // error及以上才被记录
-
-#undef DEBUG_
-#undef INFO_
-#undef WARN_
-#define ERROR_
-#define FATAL_
-
-#endif
 using std::string;
 
 namespace detail {
-
-class Logger : noncopyable
+class LoggerImpl : noncopyable
 {
 private:
-    Logger();
+    LoggerImpl();
 
 public:
-    ~Logger();
+    ~LoggerImpl();
 
-    static Logger& GetInstance();
+    static LoggerImpl& GetInstance();
 
     void waitForDone();
 
     void DoLog(context const& ctx);
 
-    // 提供给外界的局部config接口
+    // 自定义化的config打印
     void DoConfigLog(Config* config, context const& ctx);
 
     // 打印Logger内部情况
@@ -99,24 +43,19 @@ private:
     std::mutex                    m_mutex; // locked console
 };
 
-inline void DoLog(context& ctx) { detail::Logger::GetInstance().DoLog(ctx); }
-
-/**
- * @brief
- * 提供给外界自定义config输出的接口，默认提供的接口只支持全局config，当你的项目需要多个config配置的输出时可以用到这个接口
- * @param config
- * @param ctx
- */
-inline void DoConfigLog(Config* config, context& ctx)
+inline void DoLog(context& ctx)
 {
-    detail::Logger::GetInstance().DoConfigLog(config, ctx);
+    detail::LoggerImpl::GetInstance().DoLog(ctx);
 }
 
-inline void DoInternalLog(context& ctx) { detail::Logger::DoInternalLog(ctx); }
+inline void DoInternalLog(context& ctx)
+{
+    detail::LoggerImpl::DoInternalLog(ctx);
+}
 
 inline const char* GetShortName(const char* filename)
 {
-    int len = strlen(filename);
+    int len = std::strlen(filename);
     int pos = 0;
     for (int i = len - 1; i >= 0; i--)
     {
@@ -128,6 +67,25 @@ inline const char* GetShortName(const char* filename)
     }
     return filename + pos;
 }
+} // namespace detail
+
+/**
+ * @brief
+ * 提供给外界自定义config输出的接口，默认提供的接口只支持全局config，当你的项目需要多个config配置的输出时可以用到这个接口
+ * @param config
+ * @param ctx
+ */
+inline void DoConfigLog(Config* config, context& ctx)
+{
+    detail::LoggerImpl::GetInstance().DoConfigLog(config, ctx);
+}
+
+// A small helper for PTR().
+template <typename T>
+void* Ptr(T* ptr)
+{
+    return ptr;
+}
 
 // A small helper for CHECK_NOTNULL().
 template <typename T>
@@ -137,144 +95,122 @@ T* CheckNotNull(const char* file, int line, const char* text, T* ptr)
     {
         context ctx;
         ctx.level          = static_cast<int>(Levels::kFatal);
-        ctx.short_filename = GetShortName(file);
+        ctx.short_filename = detail::GetShortName(file);
         ctx.long_filename  = file;
         ctx.text           = text;
         ctx.line           = line;
-        Logger::GetInstance().DoLog(ctx);
+        detail::DoLog(ctx);
     }
     return ptr;
 }
-
-// A small helper for PTR().
-template <typename T>
-void* CastToVoidPtr(T* ptr)
-{
-    return ptr;
-}
-} // namespace detail
 // wait for async logging done
-inline void WaitForDone() { detail::Logger::GetInstance().waitForDone(); }
+inline void WaitForDone() { detail::LoggerImpl::GetInstance().waitForDone(); }
+
+// only use LogStorage::Get
+struct LogStorage : noncopyable
+{
+    explicit LogStorage(Levels level) : id_(platform::GetTid()) {}
+
+public:
+    friend class Log;
+
+    static LogStorage& Get(Levels level)
+    {
+        thread_local LogStorage instance(level);
+        instance.ctx_.level = level;
+        return instance;
+    }
+
+private:
+    platform::TidType id_;
+    fmt_buffer_t      buffer_;
+    context           ctx_;
+};
+
+// user can use that
+class Log : noncopyable
+{
+public:
+    explicit Log(Levels level) { m_log = &LogStorage::Get(level); }
+
+    Log(Log&& log) noexcept { threadSafeMove(std::forward<Log>(log)); }
+    Log& operator=(Log&& log) noexcept
+    {
+        threadSafeMove(std::forward<Log>(log));
+        return *this;
+    }
+
+    template <typename T = source_location>
+    inline const Log& with(T const& location = T::current()) const
+    {
+        assert(m_log != nullptr);
+        m_log->ctx_.line          = location.line();
+        m_log->ctx_.func_name     = location.function_name();
+        m_log->ctx_.long_filename = location.file_name();
+        m_log->ctx_.short_filename =
+            detail::GetShortName(m_log->ctx_.long_filename);
+        return *this;
+    }
+
+    template <typename T, typename... Args>
+    void println(T&& first, Args&&... args) const
+    {
+        assert(m_log != nullptr);
+        buffer_helper{&m_log->buffer_}.formatTo("{}, ", first);
+        println(std::forward<Args>(args)...);
+    }
+
+    template <typename T>
+    void println(T&& first) const
+    {
+        assert(m_log != nullptr);
+        buffer_helper{&m_log->buffer_}.formatTo("{}", first);
+        m_log->ctx_.text = fmt::to_string(m_log->buffer_);
+        detail::DoLog(m_log->ctx_);
+        clear();
+    }
+
+    template <typename... Args>
+    void printf(const char* format, Args&&... args) const
+    {
+        assert(m_log != nullptr);
+        m_log->ctx_.text = fmt::format(format, std::forward<Args>(args)...);
+        detail::DoLog(m_log->ctx_);
+        clear();
+    }
+
+private:
+    void threadSafeMove(Log&& log)
+    {
+        if (!log.m_log)
+        {
+            return;
+        }
+        if (log.m_log->id_ == platform::GetTid())
+        {
+            m_log     = log.m_log;
+            log.m_log = nullptr;
+        }
+        else
+        {
+            m_log =
+                &LogStorage::Get(static_cast<Levels>(log.m_log->ctx_.level));
+            log.m_log = nullptr;
+        }
+    }
+
+    void clear() const
+    {
+        assert(m_log != nullptr);
+        m_log->ctx_.line           = 0;
+        m_log->ctx_.func_name      = 0;
+        m_log->ctx_.long_filename  = 0;
+        m_log->ctx_.short_filename = 0;
+        m_log->buffer_.clear();
+    }
+
+private:
+    LogStorage* m_log{};
+};
+
 LBLOG_NAMESPACE_END
-
-#define LOG_NAMESPACE        lblog::
-#define LOG_DETAIL_NAMESPACE lblog::detail::
-#define LOG_CONTEXT_NAME     _ctx
-#define LTRACE               0
-#define LDEBUG               1
-#define LINFO                2
-#define LWARN                3
-#define LERROR               4
-#define LFATAL               5
-
-#define INIT_LOG_(level_)                            \
-    LOG_CONTEXT_NAME.level         = level_;         \
-    LOG_CONTEXT_NAME.line          = __LINE__;       \
-    LOG_CONTEXT_NAME.long_filename = __FILE__;       \
-    LOG_CONTEXT_NAME.short_filename =                \
-        LOG_DETAIL_NAMESPACE GetShortName(__FILE__); \
-    LOG_CONTEXT_NAME.func_name = __FUNCTION__;
-
-#ifdef TRACE_
-// LB_TRACE_用于跟踪logger日志系统内部情况
-#define LB_TRACE_(fmt_, ...)                                      \
-    do                                                            \
-    {                                                             \
-        LOG_NAMESPACE context LOG_CONTEXT_NAME;                   \
-        LOG_CONTEXT_NAME.text = fmt::format(fmt_, ##__VA_ARGS__); \
-        INIT_LOG_(LTRACE)                                         \
-        LOG_DETAIL_NAMESPACE DoInternalLog(LOG_CONTEXT_NAME);     \
-    } while (false)
-
-#define LB_TRACE(fmt_, ...)                                       \
-    do                                                            \
-    {                                                             \
-        LOG_NAMESPACE context LOG_CONTEXT_NAME;                   \
-        LOG_CONTEXT_NAME.text = fmt::format(fmt_, ##__VA_ARGS__); \
-        INIT_LOG_(LTRACE)                                         \
-        LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);             \
-    } while (false)
-#else
-#define LB_TRACE(format, ...)
-#define LB_TRACE_(format, ...)
-#endif
-
-#ifdef DEBUG_
-#define LB_DEBUG(fmt_, ...)                                       \
-    do                                                            \
-    {                                                             \
-        LOG_NAMESPACE context LOG_CONTEXT_NAME;                   \
-        LOG_CONTEXT_NAME.text = fmt::format(fmt_, ##__VA_ARGS__); \
-        INIT_LOG_(LDEBUG)                                         \
-        LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);             \
-    } while (false)
-
-#else
-#define LB_DEBUG(format, ...)
-#endif
-
-#ifdef INFO_
-#define LB_INFO(fmt_, ...)                                        \
-    do                                                            \
-    {                                                             \
-        LOG_NAMESPACE context LOG_CONTEXT_NAME;                   \
-        LOG_CONTEXT_NAME.text = fmt::format(fmt_, ##__VA_ARGS__); \
-        INIT_LOG_(LINFO)                                          \
-        LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);             \
-    } while (false)
-#else
-#define LB_INFO(format, ...)
-#endif
-
-#ifdef WARN_
-#define LB_WARN(fmt_, ...)                                        \
-    do                                                            \
-    {                                                             \
-        LOG_NAMESPACE context LOG_CONTEXT_NAME;                   \
-        LOG_CONTEXT_NAME.text = fmt::format(fmt_, ##__VA_ARGS__); \
-        INIT_LOG_(LWARN)                                          \
-        LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);             \
-    } while (false)
-#else
-#define LB_WARN(format, ...)
-#endif
-
-#ifdef ERROR_
-#define LB_ERROR(fmt_, ...)                                       \
-    do                                                            \
-    {                                                             \
-        LOG_NAMESPACE context LOG_CONTEXT_NAME;                   \
-        LOG_CONTEXT_NAME.text = fmt::format(fmt_, ##__VA_ARGS__); \
-        INIT_LOG_(LERROR)                                         \
-        LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);             \
-    } while (false)
-#else
-#define LB_ERROR(format, ...)
-#endif
-
-#ifdef FATAL_
-#define LB_FATAL(fmt_, ...)                                       \
-    do                                                            \
-    {                                                             \
-        LOG_NAMESPACE context LOG_CONTEXT_NAME;                   \
-        LOG_CONTEXT_NAME.text = fmt::format(fmt_, ##__VA_ARGS__); \
-        INIT_LOG_(LFATAL)                                         \
-        LOG_DETAIL_NAMESPACE DoLog(LOG_CONTEXT_NAME);             \
-    } while (false)
-#else
-#define LB_FATAL(format, ...)
-#endif
-
-#define CHECK_NOTNULL(val)                          \
-    lblog::detail::CheckNotNull(__FILE__, __LINE__, \
-                                "'" #val "' Must be non NULL", (val))
-#define PTR(p) lblog::detail::CastToVoidPtr(p)
-
-#ifdef LOG_CUSTOM_ONLY
-#undef LB_TRACE
-#undef LB_DEBUG
-#undef LB_INFO
-#undef LB_WARN
-#undef LB_ERROR
-#undef LB_FATAL
-#endif

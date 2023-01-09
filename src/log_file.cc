@@ -5,7 +5,7 @@
 
 #include <memory>
 
-#include "my-logger/logger.h"
+#include "my-logger/trace.impl.h"
 #include "my-logger/logger_util.h"
 
 using namespace lblog::detail;

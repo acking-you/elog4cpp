@@ -6,7 +6,7 @@
 #include <cstdio>
 
 #include "fmt/format.h"
-#include "my-logger/logger.h"
+#include "my-logger/trace.impl.h"
 #include "my-logger/logger_util.h"
 
 USING_LBLOG_DETAIL

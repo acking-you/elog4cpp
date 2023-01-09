@@ -2,6 +2,7 @@
 #include "micros.h"
 #if defined(_WIN32)
 #include <io.h>
+#include <winsock.h>
 #include <windows.h>
 
 #include <cstdio>
