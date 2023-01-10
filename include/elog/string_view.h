@@ -2,12 +2,12 @@
 
 #if __cplusplus >= 201703L
 #include <string_view>
-namespace lblog {
+namespace elog {
 using StringView = std::string_view;
 }
 #else
 #include "string_vew_lite.h"
-namespace lblog {
+namespace elog {
 using StringView = nonstd::string_view;
 }
 

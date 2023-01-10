@@ -2,14 +2,14 @@
 // Created by Alone on 2022-9-21.
 //
 
-#include "my-logger/logger_util.h"
+#include "elog/logger_util.h"
 
 #include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <ctime>
 
-#include "my-logger/processinfo.h"
+#include "elog/processinfo.h"
 
 USING_LBLOG
 constexpr int kSumLength = 1024;

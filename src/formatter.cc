@@ -1,8 +1,8 @@
-#include "my-logger/formatter.h"
+#include "elog/formatter.h"
 
-#include "my-logger/config.h"
-#include "my-logger/logger_util.h"
-#include "my-logger/processinfo.h"
+#include "elog/config.h"
+#include "elog/logger_util.h"
+#include "elog/processinfo.h"
 
 LBLOG_NAMESPACE_BEGIN
 namespace {

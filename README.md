@@ -13,11 +13,11 @@
 ```cmake
 include(FetchContent)
 FetchContent_Declare(
-        my-logger
-        GIT_REPOSITORY https://github.com/ACking-you/my-logger.git
-        GIT_TAG v1.6.2
+        elog4cpp
+        GIT_REPOSITORY https://github.com/ACking-you/elog4cpp.git
+        GIT_TAG v2.1
         GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(my-logger)
+FetchContent_MakeAvailable(elog)
 ```
 
 上面的cmake语句可能有些国人由于网络环境无法获取，我在gitee也建了个仓库供大家使用，对应的cmake如下：

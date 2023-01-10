@@ -1,13 +1,13 @@
 //
 // Created by Alone on 2022-9-21.
 //
-#include "my-logger/file_appender.h"
+#include "elog/file_appender.h"
 
 #include <cstdio>
 
 #include "fmt/format.h"
-#include "my-logger/trace.impl.h"
-#include "my-logger/logger_util.h"
+#include "elog/trace.impl.h"
+#include "elog/logger_util.h"
 
 USING_LBLOG_DETAIL
 

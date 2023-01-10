@@ -2,9 +2,9 @@
 // Created by Alone on 2022-9-21.
 //
 
-#include "my-logger/processinfo.h"
+#include "elog/processinfo.h"
 
-using namespace lblog;
+using namespace elog;
 
 platform::PidType ProcessInfo::GetPid()
 {

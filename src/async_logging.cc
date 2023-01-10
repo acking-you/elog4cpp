@@ -6,9 +6,9 @@
 #include <chrono>
 #include <utility>
 
-#include "my-logger/log_file.h"
-#include "my-logger/trace.impl.h"
-#include "my-logger/logger_util.h"
+#include "elog/log_file.h"
+#include "elog/trace.impl.h"
+#include "elog/logger_util.h"
 
 USING_LBLOG
 USING_LBLOG_DETAIL
@@ -24,12 +24,12 @@ AsyncLogging::AsyncLogging(const char* basename, int rollSize,
     // 由于构造函数抛出异常不会调用析构，所以需要做异常安全处理
     try
     {
-        m_curBuffer  = lblog::make_unique<Buffer>();
-        m_nextBuffer = lblog::make_unique<Buffer>();
+        m_curBuffer  = elog::make_unique<Buffer>();
+        m_nextBuffer = elog::make_unique<Buffer>();
 
         LB_TRACE_("后台线程任务开始创建");
         m_thread =
-            lblog::make_unique<std::thread>([this]() { thread_worker(); });
+            elog::make_unique<std::thread>([this]() { thread_worker(); });
         LB_TRACE_("开始等待后台线程资源初始化");
         m_latch.wait(); // 等待线程任务的资源初始化完成
         LB_TRACE_("线程任务资源初始化完成");
@@ -97,7 +97,7 @@ void AsyncLogging::append(const char* line, int len)
     else
     { // 否则重新申请
         LB_TRACE_("备用内存启用失败，申请新的内存空间");
-        m_curBuffer = lblog::make_unique<Buffer>();
+        m_curBuffer = elog::make_unique<Buffer>();
     }
     m_curBuffer->append(line, len);
     m_cv.notify_one(); // 通知消费
@@ -111,8 +111,8 @@ void AsyncLogging::thread_worker()
         // 不需要线程安全的写入，因本身使用它就会加锁
         LogFile   output(m_basename, m_rollSize, false);
         // 防止重复内存申请的内存
-        BufferPtr newBuffer1 = lblog::make_unique<Buffer>();
-        BufferPtr newBuffer2 = lblog::make_unique<Buffer>();
+        BufferPtr newBuffer1 = elog::make_unique<Buffer>();
+        BufferPtr newBuffer2 = elog::make_unique<Buffer>();
         newBuffer1->bzero();
         newBuffer2->bzero();
         // 用于帮助m_buffers写入磁盘的vector，每次通过swap将m_buffers的内容重置，目的是缩小临界区

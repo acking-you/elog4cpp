@@ -5,8 +5,10 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/async.h"
-#include "my-logger/logger.h"
-using namespace lblog;
+
+#include "elog/logger.h"
+
+using namespace elog;
 
 std::shared_ptr<spdlog::logger> get_spdlog_sync()
 {
@@ -26,7 +28,7 @@ extern const char* test_line;
 extern void        set_config();
 extern void        set_timer_config();
 
-#define LB_INFO Log(lblog::kInfo).with().printf
+#define LB_INFO Log(elog::kInfo).with().printf
 
 TEST(bench, one_thread_spd_async)
 {

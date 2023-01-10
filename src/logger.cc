@@ -1,12 +1,11 @@
-#include "my-logger/logger.h"
-#include "my-logger/logger_util.h"
+#include "elog/logger.h"
 
 #include<cassert>
 
 USING_LBLOG
 USING_LBLOG_DETAIL
 
-#define GLOB_CONFIG lblog::GlobalConfig::instance()
+#define GLOB_CONFIG elog::GlobalConfig::instance()
 
 LoggerImpl::LoggerImpl()
 {
@@ -26,7 +25,7 @@ void LoggerImpl::init_data()
 	// Determine whether to output logs to a file based on the config
 	if (GLOB_CONFIG.log_filepath != nullptr)
 	{
-        m_logging = lblog::make_unique<AsyncLogging>(
+        m_logging = elog::make_unique<AsyncLogging>(
             GLOB_CONFIG.log_filepath, GLOB_CONFIG.log_rollSize,
             GLOB_CONFIG.log_flushInterval);
 	}

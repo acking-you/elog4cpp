@@ -1,14 +1,14 @@
 //
 // Created by Alone on 2022-9-21.
 //
-#include "my-logger/log_file.h"
+#include "elog/log_file.h"
 
 #include <memory>
 
-#include "my-logger/trace.impl.h"
-#include "my-logger/logger_util.h"
+#include "elog/trace.impl.h"
+#include "elog/logger_util.h"
 
-using namespace lblog::detail;
+using namespace elog::detail;
 
 LogFile::LogFile(const char* basename, int rollSize, bool threadSafe,
                  int flushInterval, int checkEveryN)
@@ -16,7 +16,7 @@ LogFile::LogFile(const char* basename, int rollSize, bool threadSafe,
       m_rollSize(rollSize),
       m_flushInterval(flushInterval),
       m_checkEveryN(checkEveryN),
-      m_mtx(threadSafe ? lblog::make_unique<std::mutex>() : nullptr)
+      m_mtx(threadSafe ? elog::make_unique<std::mutex>() : nullptr)
 {
     rollFile();
 }
@@ -103,6 +103,6 @@ void LogFile::rollFile(const time_t* cache_now)
         m_lastRoll   = now;
         m_lastFlush  = now;
         m_lastPeriod = start;
-        m_file = lblog::make_unique<FileAppender>(filename); // 创建新的文件
+        m_file = elog::make_unique<FileAppender>(filename); // 创建新的文件
     }
 }

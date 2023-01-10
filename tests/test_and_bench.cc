@@ -3,10 +3,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "my-logger/logger.h"
+#include "elog/logger.h"
 #include "nanobench.h"
 
-using namespace lblog;
+using namespace elog;
 const char* log_dir = "../../log/";
 // 打印多少行
 int         test_n  = 2e5;
@@ -14,7 +14,7 @@ const char* test_line =
     "abcdefeajalfmdafijkjsfasfdsfdnfdsaf,dasfd,smfd,fafdsfdsfaf";
 
 
-#define LB_INFO  Log(lblog::kInfo).printf
+#define LB_INFO  Log(elog::kInfo).printf
 
 struct Timer
 {
@@ -65,8 +65,8 @@ void set_timer_config()
 TEST(test, timer_logger)
 {
     set_timer_config();
-    auto info =Log(lblog::kInfo);
-    auto warn = Log(lblog::kWarn);
+    auto info =Log(elog::kInfo);
+    auto warn = Log(elog::kWarn);
     for (int i = 0; i < 10; i++)
     {
         Timer tm;
@@ -85,26 +85,26 @@ void bench_start_(const char*                  bench_name,
 void test_multi_thread_performance()
 {
     set_config();
-    auto warn = Log(lblog::kWarn);
+    auto warn = Log(elog::kWarn);
     std::thread th1{[a = std::move(warn)]() {
         for (int i = 0; i < test_n; i++) a.with().printf("data:{},thread1", test_line);
     }};
     std::thread th2{[]() {
-      auto info = Log(lblog::kInfo);
+      auto info = Log(elog::kInfo);
         for (int i = 0; i < test_n; i++) info.with().printf("data:{},thread2", test_line);
     }};
     std::thread th3{[]() {
-      auto error = Log(lblog::kError);
+      auto error = Log(elog::kError);
         for (int i = 0; i < test_n; i++) error.with().printf("data:{},thread3", test_line);
     }};
     std::thread th4{[&]() {
 
-      auto info = Log(lblog::kInfo);
+      auto info = Log(elog::kInfo);
         for (int i = 0; i < test_n; i++) info.with().printf("data:{},thread4", test_line);
     }};
     std::thread th5{[&]() {
 
-      auto info = Log(lblog::kInfo);
+      auto info = Log(elog::kInfo);
         for (int i = 0; i < test_n; i++) info.with().printf("data:{},thread5", test_line);
     }};
     th1.join();
