@@ -1,12 +1,12 @@
+<!-- TOC -->
 * [使用教程](#使用教程)
-    * [如何添加到项目中使用](#如何添加到项目中使用)
-        * [CMake配置](#cmake配置)
-        * [库的编译](#库的编译)
-    * [如何使用库](#如何使用库)
-        * [如何配置](#如何配置)
-        * [精确控制输出等级](#精确控制输出等级)
-        * [日志输出介绍](#日志输出介绍)
+  * [除以上引入教程外，下面的内容均已无效(之后抽时间再更新使用文档)](#除以上引入教程外下面的内容均已无效--之后抽时间再更新使用文档-)
+  * [如何使用库](#如何使用库)
+    * [如何配置](#如何配置)
+    * [精确控制输出等级](#精确控制输出等级)
+    * [日志输出介绍](#日志输出介绍)
 * [整体架构](#整体架构)
+<!-- TOC -->
 
 # 使用教程
 想要从项目中引入该库，可以在cmake中简单的加入下面这几行代码，然后把my-logger链接到项目中即可。
@@ -31,71 +31,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(elog)
 ```
 ## 除以上引入教程外，下面的内容均已无效(之后抽时间再更新使用文档)
-## 如何添加到项目中使用
-
-输入以下命令得到项目文件
-
-```
-git clone https://github.com/ACking-you/my-logger.git
-```
-
-项目目录如下：
-
-- dependencies：整个项目的外部依赖，以源码形式存在（比如fmt库）。
-
-<!---->
-
-- lib：整个项目已经打包好的库文件，我打包的是动态库，如有静态库需要请自行编译。库的名称为logger和fmt。
-
-<!---->
-
-- 其余均为项目关键源码，就Logger.cpp和Logger.h两个。main.cc是项目运行测试代码。
-
-### CMake配置
-
-由于本人对 `cmake` 的 `install` 指令了解的并不深入，所以本库并不支持最后的 `make install`
-，为了防止大伙编译库的长时间等待，我已经编译好了动态库版本，所以直接拿去用即可（当然不排除环境的不兼容，所以可能还是需要手动编译）。
-
-**如果你clone本项目和你的项目为同级目录**，请在你的cmake文件中添加下面的代码，然后再链接这两个库便可得到本库的所有支持。
-
-```cmake
-include_directories(../my-logger/include)#指定项目相关的inclue目录
-
-include_directories(../my-logger/dependencies/fmt/include)#指定项目所依赖的fmt库include目录
-
-link_directories(../my-logger/lib)#指定项目依赖的lib目录（需要手动编译后放在这里
-#...
-
-target_link_libraries(${CMAKE_PROJECT_NAME} logger fmt)#添加对应的链接库，注意使用多线程时请注意手动链接pthread
-```
-
-> 注意：如果你不需要使用fmt库中的高级功能，那么你可以不链接fmt库，如果需要使用其高级功能进行打印（比如支持打印std::
-> map等标准库容器），那么请链接fmt库（当然这个库需要你自己编译）。
-
-### 库的编译
-
-下面为logger库的编译命令：
-
-```
-mkdir build-logger
-cd build-logger
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
-make
-```
-
-输入上面的命令后，会在 `build-logger`
-文件夹中生成对应的动态库（不定义第二个变量时默认编译静态库）。建议把这个生成的动态库移动到这个项目 `lib`
-目录中，方便在使用时只需添加之前的cmake代码。
-
-下面为fmt库的编译命令（由于该库较大，编译时间可能较久，我的电脑用了将近十分钟）：
-
-```
-mkdir build-fmt
-cd build-fmt
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON
-```
-
-同样会在 `build-fmt` 目录生成对应的动态库，建议同样放入该项目lib目录中，注意 fmt 库的动态库是由多个文件构成，这多个文件都需要被放在一起。
 
 ## 如何使用库
 
