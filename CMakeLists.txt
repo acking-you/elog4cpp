@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
 project(elog)
-
-set(CMAKE_CXX_STANDARD 11)
-
 # 检测C++版本，并给出提示
 if(CMAKE_CXX_STANDARD LESS 11)
     message(FATAL_ERROR "CMAKE_CXX_STANDARD must be at least 11")
@@ -30,13 +27,16 @@ target_include_directories(
         ${PROJECT_SOURCE_DIR}/include
 )
 
-IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if (UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PUBLIC ejson fmt-header-only pthread)
     MESSAGE(STATUS "Now is Linux")
-ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Windows")
+elseif(APPLE)
+    target_link_libraries(${PROJECT_NAME} PUBLIC ejson fmt-header-only pthread)
+    MESSAGE(STATUS "Now is MacOS")
+elseif (WIN32)
     target_link_libraries(${PROJECT_NAME} PUBLIC ejson fmt-header-only ws2_32)
     MESSAGE(STATUS "Now is windows")
-ENDIF ()
+endif ()
 
 if (ENABLE_TEST)
     enable_testing()

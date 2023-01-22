@@ -93,6 +93,7 @@ struct config
       switch (OP_INT(formatter))
       {
          case "default"_i: return formatter::defaultFormatter;
+         case "json"_i: return formatter::jsonFormatter;
          case "colorful"_i: return formatter::colorfulFormatter;
          case "custom"_i:
             if (format_string)
@@ -237,6 +238,8 @@ struct config
 AUTO_GEN_NON_INTRUSIVE(config, roll_size, flush_interval, out_console, out_file,
                        flag, level, formatter)
 
+#pragma warning(disable : 4996)
+
 void GlobalConfig::loadFromJSON(const char* filename)
 {
    thread_local config t_config;
@@ -272,6 +275,12 @@ void GlobalConfig::loadFromJSON(const char* filename)
    }
 
    // 以mb为单位
+   if (t_config.roll_size > 128)
+   {
+      std::cerr << "roll_size must be less than 128mb,now you set to "
+                << t_config.roll_size << ".use default roll_size = 4mb";
+      t_config.roll_size = 4;
+   }
    log_rollSize      = t_config.roll_size * (1024 * 1024);
    log_flushInterval = t_config.flush_interval;
    log_console       = t_config.out_console;
@@ -280,6 +289,8 @@ void GlobalConfig::loadFromJSON(const char* filename)
    log_formatter     = config::from_formatter(
      t_config.formatter, object.has_key("fmt_string") ? t_fmt_string : nullptr);
 }
+
+#pragma warning(default : 4996)
 
 void GlobalConfig::loadToJSON(const char* filename)
 {

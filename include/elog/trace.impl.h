@@ -13,7 +13,7 @@
    _ctx.short_filename = lblog::detail::GetShortName(__FILE__);                \
    _ctx.func_name      = __FUNCTION__;
 
-#ifdef TRACE_
+#ifdef ELOG_TRACE_
 // LB_TRACE_用于跟踪logger日志系统内部情况
 #define LB_TRACE_(fmt_, ...)                                                   \
    do {                                                                        \

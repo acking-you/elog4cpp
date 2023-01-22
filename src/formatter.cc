@@ -3,6 +3,7 @@
 #include "elog/config.h"
 #include "elog/logger_util.h"
 #include "elog/processinfo.h"
+#include "fmt/color.h"
 
 LBLOG_NAMESPACE_BEGIN
 namespace {
@@ -66,8 +67,7 @@ void formatter::defaultFormatter(Config* config, context const& ctx, fmt_buffer_
                       Appenders outType)
 {
    assert(config != nullptr);
-   thread_local buffer_t t_outputBuffer;
-   t_outputBuffer.buf = &buffer;
+   buffer_t t_outputBuffer(&buffer);
    // RAII before after call
    auto helper =
      trigger_helper(&t_outputBuffer, &config->log_before, &config->log_after);
@@ -122,7 +122,7 @@ void formatter::colorfulFormatter(Config* config, context const& ctx, fmt_buffer
                        Appenders outType)
 {
    assert(config != nullptr);
-   thread_local buffer_t t_outputBuffer;
+   buffer_t t_outputBuffer;
    t_outputBuffer.buf = &buffer;
    // RAII before after call
    auto helper =
@@ -204,7 +204,7 @@ void formatter::jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& 
                    Appenders outType)
 {
    assert(config != nullptr);
-   thread_local buffer_t t_outputBuffer;
+   buffer_t t_outputBuffer;
    t_outputBuffer.buf = &buffer;
    // RAII before after call
    auto helper =
@@ -274,7 +274,7 @@ void customStringFormatter(StringView format_str, Config* config,
                            Appenders outType)
 {
    assert(config != nullptr);
-   thread_local buffer_t outputBuffer;
+   buffer_t outputBuffer;
    outputBuffer.buf = &buffer;
    // RAII before after call
    auto helper =

@@ -3,11 +3,13 @@
 
 #include "micros.h"
 
+#pragma warning(disable:4067)
 LBLOG_NAMESPACE_BEGIN
 struct source_location
 {
 public:
 #if defined(_WIN32) and _MSC_VER >= 1920
+
    static constexpr source_location current(
      const char*          fileName     = __builtin_FILE(),
      const char*          functionName = __builtin_FUNCTION(),
@@ -70,3 +72,4 @@ private:
    const std::uint_least32_t columnOffset;
 };
 LBLOG_NAMESPACE_END
+#pragma warning(default:4067)

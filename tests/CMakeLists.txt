@@ -18,12 +18,27 @@ FetchContent_Declare(
         GIT_SHALLOW TRUE)
 FetchContent_MakeAvailable(nanobench)
 
+FetchContent_Declare(
+        spdlog
+        GIT_REPOSITORY https://github.com/gabime/spdlog.git
+        GIT_TAG v1.11.0
+        GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(spdlog)
+
 file(GLOB TEST_FILES
-        "${PROJECT_SOURCE_DIR}/tests/*.h"
-        "${PROJECT_SOURCE_DIR}/tests/*.cc"
+        "${PROJECT_SOURCE_DIR}/tests/test_*.cc"
         )
+file(GLOB BENCH_FILES
+        "${PROJECT_SOURCE_DIR}/tests/bench_*.cc"
+        )
+
+message(STATUS "TEST_FILES:${TEST_FILES}\n BENCH_FILES:${BENCH_FILES}")
+
 
 add_executable(unittest ${TEST_FILES})
 target_link_libraries(unittest PRIVATE gtest_main elog nanobench)
-target_include_directories(unittest PRIVATE ./third-part-logger/include)
-add_test(NAME my-logger-unittest COMMAND unittest)
+add_test(NAME ${PROJECT_NAME}-unittest COMMAND unittest)
+
+add_executable(benchtest ${BENCH_FILES})
+target_link_libraries(benchtest PRIVATE gtest_main elog nanobench spdlog_header_only)
+add_test(NAME ${PROJECT_NAME}-benchtest COMMAND benchtest)

@@ -1,4 +1,6 @@
 #pragma once
+#include <sstream>
+
 #include "async_logging.h"
 #include "config.h"
 #include "processinfo.h"
@@ -97,7 +99,7 @@ inline void DoConfigLog(Config* config, context& ctx)
    detail::LoggerImpl::GetInstance().DoConfigLog(config, ctx);
 }
 
-// A small helper for PTR().
+// A small helper for print any pointer.
 template <typename T>
 void* Ptr(T* ptr)
 {
@@ -121,47 +123,50 @@ T* CheckNotNull(const char* file, const char* shortFile, int line,
    }
    return ptr;
 }
+
+#define CHECK_NOTNULL(ptr)                                                     \
+   elog::CheckNotNull(__FILE__, elog::detail::GetShortName(__FILE__),          \
+                      __LINE__, "nullptr error", ptr)
 // wait for async logging done
 inline void WaitForDone() { detail::LoggerImpl::GetInstance().waitForDone(); }
 
 // only use LogStorage::Get
 struct LogStorage : noncopyable
 {
-   explicit LogStorage(Levels level) : id_(platform::GetTid()) {}
+   explicit LogStorage() = default;
 
 public:
    friend class Log;
-
-   static LogStorage& Get(Levels level)
-   {
-      thread_local LogStorage instance(level);
-      instance.ctx_.level = level;
-      return instance;
-   }
+   static std::unique_ptr<LogStorage> Get();
 
 private:
-   platform::TidType id_;
-   fmt_buffer_t      buffer_;
-   context           ctx_;
+   context      ctx_;
+   fmt_buffer_t buffer_;
 };
 
-// user can use that
+// log by class
 class Log : noncopyable
 {
 public:
-   using ConfigPtr = std::unique_ptr<Config>;
+   using ConfigPtr     = std::unique_ptr<Config>;
+   using LogStoragePtr = std::unique_ptr<LogStorage>;
 
-   explicit Log(Levels level) : m_log(&LogStorage::Get(level)) {}
+   explicit Log(Levels level) : m_storage(LogStorage::Get()) {}
 
    explicit Log(Levels level, ConfigPtr config)
-     : m_log(&LogStorage::Get(level)), m_config(std::move(config))
+     : m_storage(LogStorage::Get()), m_config(std::move(config))
    {
    }
 
-   Log(Log&& log) noexcept { threadSafeMove(std::forward<Log>(log)); }
+   Log(Log&& log) noexcept
+     : m_storage(std::move(log.m_storage)), m_config(std::move(log.m_config))
+   {
+   }
+
    Log& operator=(Log&& log) noexcept
    {
-      threadSafeMove(std::forward<Log>(log));
+      this->m_config  = std::move(log.m_config);
+      this->m_storage = std::move(log.m_storage);
       return *this;
    }
 
@@ -171,7 +176,7 @@ public:
                                      bool>::type = true>
    inline const Log& with(T const& location = T::current()) const
    {
-      assert(m_log != nullptr);
+      assert(m_storage != nullptr);
       initLocation(location);
       return *this;
    }
@@ -179,17 +184,18 @@ public:
    template <typename T, typename... Args>
    void println(T&& first, Args&&... args) const
    {
-      assert(m_log != nullptr);
-      buffer_helper{&m_log->buffer_}.formatTo("{}, ", first);
+      assert(m_storage != nullptr);
+      buffer_helper{&m_storage->buffer_}.formatTo("{}, ", first);
       println(std::forward<Args>(args)...);
    }
 
    template <typename T>
    void println(T&& first) const
    {
-      assert(m_log != nullptr);
-      buffer_helper{&m_log->buffer_}.formatTo("{}", first);
-      m_log->ctx_.text = fmt::to_string(m_log->buffer_);
+      assert(m_storage != nullptr);
+
+      buffer_helper{&m_storage->buffer_}.formatTo("{}", first);
+      m_storage->ctx_.text = fmt::to_string(m_storage->buffer_);
       doLog();
       clearLocation();
    }
@@ -197,59 +203,100 @@ public:
    template <typename... Args>
    void printf(const char* format, Args&&... args) const
    {
-      assert(m_log != nullptr);
-      m_log->ctx_.text = fmt::format(format, std::forward<Args>(args)...);
+      assert(m_storage != nullptr);
+
+      m_storage->ctx_.text = fmt::format(format, std::forward<Args>(args)...);
       doLog();
       clearLocation();
    }
 
-private:
-   void threadSafeMove(Log&& log)
+   template <typename... Args>
+   static void trace(const char* format, Args&&... args)
    {
-      if (!log.m_log) { return; }
-      m_config.reset();
-      m_config.swap(log.m_config);
-      if (log.m_log->id_ == platform::GetTid())
-      {
-         m_log     = log.m_log;
-         log.m_log = nullptr;
-      }
-      else
-      {
-         m_log = &LogStorage::Get(static_cast<Levels>(log.m_log->ctx_.level));
-         log.m_log = nullptr;
-      }
+      auto& log = instance();
+      assert(log.m_storage != nullptr);
+      log.m_storage->ctx_.level = kTrace;
+      log.printf(format, std::forward<Args>(args)...);
    }
+
+   template <typename... Args>
+   static void debug(const char* format, Args&&... args)
+   {
+      auto& log = instance();
+      assert(log.m_storage != nullptr);
+
+      log.m_storage->ctx_.level = kDebug;
+      log.printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   static void info(const char* format, Args&&... args)
+   {
+      auto& log = instance();
+      assert(log.m_storage != nullptr);
+
+      log.m_storage->ctx_.level = kInfo;
+      log.printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   static void warn(const char* format, Args&&... args)
+   {
+      auto& log = instance();
+      assert(log.m_storage != nullptr);
+
+      log.m_storage->ctx_.level = kWarn;
+      log.printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   static void error(const char* format, Args&&... args)
+   {
+      auto& log = instance();
+      assert(log.m_storage != nullptr);
+
+      log.m_storage->ctx_.level = kError;
+      log.printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   static void fatal(const char* format, Args&&... args)
+   {
+      auto& log = instance();
+      assert(log.m_storage != nullptr);
+
+      log.m_storage->ctx_.level = kFatal;
+      log.printf(format, std::forward<Args>(args)...);
+   }
+
+private:
+   static Log& instance();
 
    void doLog() const
    {
       detail::LoggerImpl::GetInstance().DoConfigLog(
-        m_config ? m_config.get() : &GlobalConfig::Get(), m_log->ctx_);
+        m_config ? m_config.get() : &GlobalConfig::Get(), m_storage->ctx_);
    }
 
    void initLocation(source_location const& location) const
    {
-      m_log->ctx_.line          = location.line();
-      m_log->ctx_.func_name     = location.function_name();
-      m_log->ctx_.long_filename = location.file_name();
-      m_log->ctx_.short_filename =
-        detail::GetShortName(m_log->ctx_.long_filename);
+      m_storage->ctx_.line          = location.line();
+      m_storage->ctx_.func_name     = location.function_name();
+      m_storage->ctx_.long_filename = location.file_name();
+      m_storage->ctx_.short_filename =
+        detail::GetShortName(m_storage->ctx_.long_filename);
    }
 
    void clearLocation() const
    {
-      std::memset((void*)&m_log->ctx_.line, 0,
-                  context::GetNoTextAndLevelLength(m_log->ctx_));
-      m_log->buffer_.clear();
+      std::memset((void*)&m_storage->ctx_.line, 0,
+                  context::GetNoTextAndLevelLength(m_storage->ctx_));
+      m_storage->buffer_.clear();
    }
 
 private:
-   LogStorage*             m_log{};
-   std::unique_ptr<Config> m_config;
+   LogStoragePtr m_storage;
+   ConfigPtr     m_config;
 };
-
-#define CHECK_NOTNULL(v)                                                       \
-   elog::CheckNotNull(__FILE__, elog::detail::GetShortName(__FILE__),          \
-                      __LINE__, "nullptr error", v)
 
 LBLOG_NAMESPACE_END

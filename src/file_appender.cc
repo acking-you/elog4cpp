@@ -14,6 +14,8 @@ USING_LBLOG_DETAIL
 //'e' 代表O_CLOEXEC 防止fork多进程文件描述符未关闭
 FileAppender::FileAppender(const char* filename) { init(filename); }
 
+#pragma warning(disable:4996)
+
 void FileAppender::init(const char* filename)
 {
    // 判断写入文件的文件夹是否存在，以及最终文件是否正常打开
@@ -47,6 +49,7 @@ void FileAppender::init(const char* filename)
    LB_TRACE_("设置 FILE* 缓冲区大小为{}", sizeof(m_buffer));
    platform::CallSetBuffer(m_file, m_buffer, sizeof(m_buffer));
 }
+#pragma warning(default:4996)
 
 FileAppender::~FileAppender()
 {

@@ -66,6 +66,8 @@ const char* Util::getErrorInfo(int error_code)
    return platform::GetStrError_r(error_code, t_errnobuf, sizeof(t_errnobuf));
 }
 
+//disable waring in msvc
+#pragma warning(disable:4996)
 // Don't have same name If it is less than one
 // second since the last refresh time
 const char* Util::getLogFileName(const char* basename, time_t& now)
@@ -88,3 +90,4 @@ const char* Util::getLogFileName(const char* basename, time_t& now)
    assert(filename[baseSz + tsz + nsz] == '\0');
    return filename;
 }
+#pragma warning(default:4996)

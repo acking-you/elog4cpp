@@ -11,6 +11,9 @@ LBLOG_NAMESPACE_BEGIN
 namespace detail {
 enum { kSmallBuffer = 4096, kLargeBuffer = 4096 * 1024 };
 template <int SIZE>
+
+#pragma warning(disable: 4018)
+
 class FixedBuffer : noncopyable
 {
 public:
@@ -37,4 +40,7 @@ private:
    char* m_cur_buf{};        // 目前写入的位置
 };
 }   // namespace detail
+
+#pragma warning(default:4018)
+
 LBLOG_NAMESPACE_END

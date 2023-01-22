@@ -43,6 +43,8 @@ void LogFile::flush()
    else { m_file->flush(); }
 }
 
+#pragma warning(disable:4018)
+
 void LogFile::append_unlocked(const char* line, int len)
 {
    m_file->append(line, len);
@@ -91,3 +93,4 @@ void LogFile::rollFile(const time_t* cache_now)
       m_file = elog::make_unique<FileAppender>(filename);   // 创建新的文件
    }
 }
+#pragma warning(default:4018)

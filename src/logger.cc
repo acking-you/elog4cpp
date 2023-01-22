@@ -94,3 +94,14 @@ void LoggerImpl::DoConfigLog(Config* config, const context& ctx)
       abort();
    }
 }
+
+std::unique_ptr<LogStorage> LogStorage::Get()
+{
+   return elog::make_unique<LogStorage>();
+}
+
+Log& Log::instance()
+{
+   thread_local Log t_log(elog::kDebug);
+   return t_log;
+}

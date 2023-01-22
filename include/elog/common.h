@@ -9,9 +9,7 @@
 #include <type_traits>
 
 #include "any.h"
-#include "fmt/color.h"
 #include "fmt/core.h"
-#include "fmt/format.h"
 #include "fmt/ranges.h"
 #include "micros.h"
 #include "string_view.h"
@@ -19,9 +17,9 @@
 LBLOG_NAMESPACE_BEGIN
 #if __cplusplus == 201103l
 template <typename T, typename... Args>
-auto make_unique(Args&&... args) -> std::unique_ptr<T>
+auto make_unique(Args&&... args) -> ::std::unique_ptr<T>
 {
-   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+   return ::std::unique_ptr<T>(new T(::std::forward<Args>(args)...));
 }
 #else
 using std::make_unique;
@@ -85,6 +83,8 @@ inline constexpr int operator""_i(const char* op, size_t len)
 {
    return OP_INT({op, len});
 }
+
+#pragma warning(disable:4244)
 
 struct context
 {   // 用于传递每次输出内容的上下文
@@ -162,7 +162,7 @@ public:
    explicit OutputBuffer(fmt_buffer_t* fmt_buf) : buffer_helper(fmt_buf) {}
 
    void setContext(Any_t v) { m_ctx = std::move(v); }
-   auto getContext() const -> const Any_t& { return m_ctx; }
+   [[nodiscard]] auto getContext() const -> const Any_t& { return m_ctx; }
    auto getMutableContext() -> Any_t& { return m_ctx; }
 };
 
@@ -184,5 +184,7 @@ struct trigger_helper
       buffer->push_back('\n');
    }
 };
+
+#pragma warning(default:4244)
 
 LBLOG_NAMESPACE_END

@@ -3,7 +3,7 @@
 #include <thread>
 #include <functional>
 
-inline void bench_start(const char* bench_name,const std::function<void()>&bench_func,int num = 109){
+inline void bench_start(const char* bench_name,const std::function<void()>&bench_func,int num = 10){
     ankerl::nanobench::Bench().minEpochIterations(num).run(bench_name,bench_func);
 }
 
