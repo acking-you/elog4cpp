@@ -6,7 +6,7 @@ namespace elog {
 using StringView = std::string_view;
 }
 #else
-#include "string_vew_lite.h"
+#include "dependencies/string_vew_lite.h"
 namespace elog {
 using StringView = nonstd::string_view;
 }

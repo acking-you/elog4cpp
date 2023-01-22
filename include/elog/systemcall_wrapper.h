@@ -2,8 +2,8 @@
 #include "micros.h"
 #if defined(_WIN32)
 #include <io.h>
-#include <winsock.h>
 #include <windows.h>
+#include <winsock.h>
 
 #include <cstdio>
 #include <ctime>
@@ -33,94 +33,85 @@ using TidType = DWORD;
 
 inline auto WSAStartUp() -> bool
 {
-    WORD    wVersionRequested;
-    WSADATA wsaData;
-    int     err;
+   WORD    wVersionRequested;
+   WSADATA wsaData;
+   int     err;
 
-    /* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
-    wVersionRequested = MAKEWORD(2, 2);
+   /* Use the MAKEWORD(lowbyte, highbyte) macro declared in Windef.h */
+   wVersionRequested = MAKEWORD(2, 2);
 
-    err = WSAStartup(wVersionRequested, &wsaData);
-    if (err != 0)
-    {
-        /* Tell the user that we could not find a usable */
-        /* Winsock DLL.                                  */
-        std::printf("WSAStartup failed with error: %d\n", err);
-        return false;
-    }
+   err = WSAStartup(wVersionRequested, &wsaData);
+   if (err != 0)
+   {
+      /* Tell the user that we could not find a usable */
+      /* Winsock DLL.                                  */
+      std::printf("WSAStartup failed with error: %d\n", err);
+      return false;
+   }
 
-    /* Confirm that the WinSock DLL supports 2.2.*/
-    /* Note that if the DLL supports versions greater    */
-    /* than 2.2 in addition to 2.2, it will still return */
-    /* 2.2 in wVersion since that is the version we      */
-    /* requested.                                        */
+   /* Confirm that the WinSock DLL supports 2.2.*/
+   /* Note that if the DLL supports versions greater    */
+   /* than 2.2 in addition to 2.2, it will still return */
+   /* 2.2 in wVersion since that is the version we      */
+   /* requested.                                        */
 
-    if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
-    {
-        /* Tell the user that we could not find a usable */
-        /* WinSock DLL.                                  */
-        std::printf("Could not find a usable version of Winsock.dll\n");
-        WSACleanup();
-        return false;
-    }
-    return true;
+   if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+   {
+      /* Tell the user that we could not find a usable */
+      /* WinSock DLL.                                  */
+      std::printf("Could not find a usable version of Winsock.dll\n");
+      WSACleanup();
+      return false;
+   }
+   return true;
 }
 
 struct cleanHelper
 {
-    ~cleanHelper() { WSACleanup(); }
+   ~cleanHelper() { WSACleanup(); }
 };
 
 inline auto GetPid() -> PidType { return GetCurrentProcessId(); }
 inline auto GetTid() -> TidType { return GetCurrentThreadId(); }
 inline auto GetHostname(char* name, size_t len) -> int
 {
-    if (!WSAStartUp()) return -1;
-    cleanHelper h;
-    return gethostname(name, static_cast<int>(len));
+   if (!WSAStartUp()) return -1;
+   cleanHelper h;
+   return gethostname(name, static_cast<int>(len));
 }
 inline auto GetLocalTime_r(std::time_t* timer, std::tm* tm) -> std::tm*
 {
-    if (localtime_s(tm, timer) < 0)
-    {
-        return nullptr;
-    }
-    return tm;
+   if (localtime_s(tm, timer) < 0) { return nullptr; }
+   return tm;
 }
 inline auto GetGmTime_r(std::time_t* timer, std::tm* tm) -> std::tm*
 {
-    if (gmtime_s(tm, timer) < 0)
-    {
-        return nullptr;
-    }
-    return tm;
+   if (gmtime_s(tm, timer) < 0) { return nullptr; }
+   return tm;
 }
 inline auto GetStrError_r(int err_code, char* buf, size_t len) -> char*
 {
-    if (strerror_s(buf, len, err_code) < 0)
-    {
-        return nullptr;
-    }
-    return buf;
+   if (strerror_s(buf, len, err_code) < 0) { return nullptr; }
+   return buf;
 }
 
 inline auto CallAccess(const char* filename, int perm) -> int
 {
-    return _access(filename, perm);
+   return _access(filename, perm);
 }
 inline auto CallUnlockedWrite(const void* ptr, size_t size, size_t n,
                               FILE* stream) -> size_t
 {
-    return fwrite(ptr, size, n, stream);
+   return fwrite(ptr, size, n, stream);
 }
 inline void CallSetBuffer(FILE* stream, char* buf, unsigned size)
 {
-    (void)std::setvbuf(stream, buf, _IOFBF, size);
+   (void)std::setvbuf(stream, buf, _IOFBF, size);
 }
 
 inline auto CallFPutsUnlocked(const char* str, FILE* file) -> int
 {
-    return fputs(str, file);
+   return fputs(str, file);
 }
 
 #elif defined(__linux__)
@@ -131,43 +122,43 @@ using TidType = pid_t;
 inline auto GetPid() -> PidType { return getpid(); }
 inline auto GetTid() -> TidType
 {
-    return static_cast<TidType>(syscall(SYS_gettid));
+   return static_cast<TidType>(syscall(SYS_gettid));
 }
 inline auto GetHostname(char* name, size_t len) -> int
 {
-    return ::gethostname(name, len);
+   return ::gethostname(name, len);
 }
 inline auto GetLocalTime_r(std::time_t* timer, std::tm* tm) -> std::tm*
 {
-    return ::localtime_r(timer, tm);
+   return ::localtime_r(timer, tm);
 }
 inline auto GetGmTime_r(std::time_t* timer, std::tm* tm) -> std::tm*
 {
-    return ::gmtime_r(timer, tm);
+   return ::gmtime_r(timer, tm);
 }
 inline auto GetStrError_r(int err_code, char* buf, size_t len) -> char*
 {
-    return ::strerror_r(err_code, buf, len);
+   return ::strerror_r(err_code, buf, len);
 }
 inline auto CallAccess(const char* filename, int perm) -> int
 {
-    return ::access(filename, perm);
+   return ::access(filename, perm);
 }
 inline auto CallUnlockedWrite(const void* ptr, size_t size, size_t n,
                               FILE* stream) -> size_t
 {
-    return ::fwrite_unlocked(ptr, size, n, stream);
+   return ::fwrite_unlocked(ptr, size, n, stream);
 }
 inline void CallSetBuffer(FILE* stream, char* buf, unsigned size)
 {
-    ::setbuffer(stream, buf, size);
+   ::setbuffer(stream, buf, size);
 }
 inline auto CallFPutsUnlocked(const char* str, FILE* file) -> int
 {
-    return ::fputs_unlocked(str, file);
+   return ::fputs_unlocked(str, file);
 }
 #else
 #error "not supported compiler"
 #endif
-} // namespace platform
+}   // namespace platform
 LBLOG_NAMESPACE_END

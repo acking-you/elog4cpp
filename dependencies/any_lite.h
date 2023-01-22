@@ -84,7 +84,7 @@ public:
         }
     }
 
-    /// Same effect as this->clear().
+    /// Same effect as this->clearLocation().
     ~any()
     {
         this->clear();

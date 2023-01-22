@@ -1,13 +1,6 @@
-cmake-build-debug
-cmake-build-release
-cmake-build-debug-mingw
-cmake-build-release-mingw
-cmake-build-debug-visual-studio
-cmake-build-release-x64-msvc
-cmake-build-release-visual-studio
+cmake-*
 build
-build-fmt
-build-logger
+build-*
 log
 .idea
 log.txt

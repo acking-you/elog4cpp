@@ -3,8 +3,8 @@
 #include <thread>
 #include <functional>
 
-void bench_start(const char* bench_name,const std::function<void()>&bench_func){
-    ankerl::nanobench::Bench().minEpochIterations(10).run(bench_name,bench_func);
+inline void bench_start(const char* bench_name,const std::function<void()>&bench_func,int num = 109){
+    ankerl::nanobench::Bench().minEpochIterations(num).run(bench_name,bench_func);
 }
 
 inline void test_multi_thread(const int test_n,const std::function<void()>&logger_func)

@@ -1,25 +1,21 @@
----
-BasedOnStyle: Microsoft
----
+BasedOnStyle: Google
 Language: Cpp
-AccessModifierOffset: -4
+AccessModifierOffset: -3
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: AcrossComments
 AlignConsecutiveAssignments: AcrossComments
 AlignConsecutiveDeclarations: AcrossComments
-AlignEscapedNewlines: Left
+AlignEscapedNewlines: Right
 AlignOperands: true
 AlignTrailingComments: true
 AllowAllArgumentsOnNextLine: true
-AllowAllConstructorInitializersOnNextLine: false
 AllowAllParametersOfDeclarationOnNextLine: true
-AllowShortBlocksOnASingleLine: Never
+AllowShortBlocksOnASingleLine: Always
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: All
 AllowShortLambdasOnASingleLine: All
-AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
 AllowShortLoopsOnASingleLine: true
-AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: Yes
@@ -29,7 +25,7 @@ BraceWrapping:
   AfterCaseLabel: false
   AfterClass: true
   AfterControlStatement: Always
-  AfterEnum: true
+  AfterEnum: false
   AfterFunction: true
   AfterNamespace: false
   AfterObjCDeclaration: false
@@ -51,9 +47,8 @@ BreakStringLiterals: true
 ColumnLimit: 80
 CommentPragmas: "^ NOLINT:"
 CompactNamespaces: false
-ConstructorInitializerAllOnOneLineOrOnePerLine: true
-ConstructorInitializerIndentWidth: 4
-ContinuationIndentWidth: 4
+ConstructorInitializerIndentWidth: 2
+ContinuationIndentWidth: 2
 Cpp11BracedListStyle: true
 DeriveLineEnding: true
 DerivePointerAlignment: true
@@ -61,29 +56,29 @@ DisableFormat: false
 ExperimentalAutoDetectBinPacking: false
 FixNamespaceComments: true
 ForEachMacros:
- - foreach
- - Q_FOREACH
- - BOOST_FOREACH
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
 IncludeBlocks: Regroup
 IncludeCategories:
- - Regex: '^<ext/.*\.h>'
-   Priority: 2
-   SortPriority: 0
- - Regex: '^<.*\.h>'
-   Priority: 1
-   SortPriority: 0
- - Regex: "^<.*"
-   Priority: 2
-   SortPriority: 0
- - Regex: ".*"
-   Priority: 3
-   SortPriority: 0
+  - Regex: '^<ext/.*\.h>'
+    Priority: 2
+    SortPriority: 0
+  - Regex: '^<.*\.h>'
+    Priority: 1
+    SortPriority: 0
+  - Regex: "^<.*"
+    Priority: 2
+    SortPriority: 0
+  - Regex: ".*"
+    Priority: 3
+    SortPriority: 0
 IncludeIsMainRegex: "([-_](test|unittest))?$"
 IncludeIsMainSourceRegex: ""
 IndentCaseLabels: true
 IndentGotoLabels: true
 IndentPPDirectives: None
-IndentWidth: 4
+IndentWidth: 3
 IndentWrappedFunctionNames: false
 JavaScriptQuotes: Leave
 JavaScriptWrapImports: true
@@ -93,7 +88,7 @@ MacroBlockEnd: ""
 MaxEmptyLinesToKeep: 1
 NamespaceIndentation: None
 ObjCBinPackProtocolList: Never
-ObjCBlockIndentWidth: 2
+ObjCBlockIndentWidth: 3
 ObjCSpaceAfterProperty: false
 ObjCSpaceBeforeProtocolList: true
 PenaltyBreakAssignment: 2
@@ -106,33 +101,33 @@ PenaltyExcessCharacter: 1000000
 PenaltyReturnTypeOnItsOwnLine: 200
 PointerAlignment: Right
 RawStringFormats:
- - Language: Cpp
-   Delimiters:
-     - cc
-     - CC
-     - cpp
-     - Cpp
-     - CPP
-     - "c++"
-     - "C++"
-   CanonicalDelimiter: ""
-   BasedOnStyle: google
- - Language: TextProto
-   Delimiters:
-     - pb
-     - PB
-     - proto
-     - PROTO
-   EnclosingFunctions:
-     - EqualsProto
-     - EquivToProto
-     - PARSE_PARTIAL_TEXT_PROTO
-     - PARSE_TEST_PROTO
-     - PARSE_TEXT_PROTO
-     - ParseTextOrDie
-     - ParseTextProtoOrDie
-   CanonicalDelimiter: ""
-   BasedOnStyle: google
+  - Language: Cpp
+    Delimiters:
+      - cc
+      - CC
+      - cpp
+      - Cpp
+      - CPP
+      - "c++"
+      - "C++"
+    CanonicalDelimiter: ""
+    BasedOnStyle: google
+  - Language: TextProto
+    Delimiters:
+      - pb
+      - PB
+      - proto
+      - PROTO
+    EnclosingFunctions:
+      - EqualsProto
+      - EquivToProto
+      - PARSE_PARTIAL_TEXT_PROTO
+      - PARSE_TEST_PROTO
+      - PARSE_TEXT_PROTO
+      - ParseTextOrDie
+      - ParseTextProtoOrDie
+    CanonicalDelimiter: ""
+    BasedOnStyle: google
 ReflowComments: true
 SortIncludes: CaseInsensitive
 SortUsingDeclarations: false
@@ -147,7 +142,7 @@ SpaceBeforeParens: ControlStatements
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceInEmptyBlock: false
 SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 1
+SpacesBeforeTrailingComments: 3
 SpacesInAngles: false
 SpacesInConditionalStatement: false
 SpacesInContainerLiterals: false
@@ -157,6 +152,6 @@ SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
 Standard: Auto
 StatementMacros:
- - Q_UNUSED
- - QT_REQUIRE_VERSION
+  - Q_UNUSED
+  - QT_REQUIRE_VERSION
 TabWidth: 4

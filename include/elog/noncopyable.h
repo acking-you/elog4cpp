@@ -4,11 +4,11 @@ LBLOG_NAMESPACE_BEGIN
 class noncopyable
 {
 public:
-    noncopyable(const noncopyable&)    = delete;
-    void operator=(const noncopyable&) = delete;
+   noncopyable(const noncopyable&)    = delete;
+   void operator=(const noncopyable&) = delete;
 
 protected:
-    noncopyable()  = default;
-    ~noncopyable() = default;
+   noncopyable()  = default;
+   ~noncopyable() = default;
 };
 LBLOG_NAMESPACE_END

@@ -13,15 +13,15 @@ namespace detail {
 class CountDownLatch
 {
 public:
-    explicit CountDownLatch(int count);
-    void wait();
-    void countDown();
-    int  getCount();
+   explicit CountDownLatch(int count);
+   void wait();
+   void countDown();
+   int  getCount();
 
 private:
-    std::mutex              m_mtx;
-    std::condition_variable m_cv;
-    int                     m_count;
+   std::mutex              m_mtx;
+   std::condition_variable m_cv;
+   int                     m_count;
 };
-} // namespace detail
+}   // namespace detail
 LBLOG_NAMESPACE_END

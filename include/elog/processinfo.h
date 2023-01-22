@@ -6,5 +6,5 @@ namespace ProcessInfo {
 platform::PidType GetPid();
 platform::TidType GetTid();
 const char*       GetHostname();
-} // namespace ProcessInfo
+}   // namespace ProcessInfo
 LBLOG_NAMESPACE_END
