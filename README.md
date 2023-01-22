@@ -25,10 +25,10 @@ FetchContent_MakeAvailable(elog)
 include(FetchContent)
 FetchContent_Declare(
         my-logger
-        GIT_REPOSITORY https://gitee.com/acking-you/my-logger.git
-        GIT_TAG v1.6.2
+        GIT_REPOSITORY https://gitee.com/acking-you/elog4cpp.git
+        GIT_TAG v2.1
         GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(my-logger)
+FetchContent_MakeAvailable(elog)
 ```
 ## 除以上引入教程外，下面的内容均已无效(之后抽时间再更新使用文档)
 ## 如何添加到项目中使用
@@ -64,7 +64,7 @@ include_directories(../my-logger/include)#指定项目相关的inclue目录
 include_directories(../my-logger/dependencies/fmt/include)#指定项目所依赖的fmt库include目录
 
 link_directories(../my-logger/lib)#指定项目依赖的lib目录（需要手动编译后放在这里
-...
+#...
 
 target_link_libraries(${CMAKE_PROJECT_NAME} logger fmt)#添加对应的链接库，注意使用多线程时请注意手动链接pthread
 ```
