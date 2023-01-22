@@ -24,7 +24,7 @@ FetchContent_MakeAvailable(elog)
 ```cmake
 include(FetchContent)
 FetchContent_Declare(
-        my-logger
+        elog4cpp
         GIT_REPOSITORY https://gitee.com/acking-you/elog4cpp.git
         GIT_TAG v2.1
         GIT_SHALLOW TRUE)
