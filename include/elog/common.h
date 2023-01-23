@@ -84,7 +84,10 @@ inline constexpr int operator""_i(const char* op, size_t len)
    return OP_INT({op, len});
 }
 
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable:4244)
+#endif
 
 struct context
 {   // 用于传递每次输出内容的上下文
@@ -185,6 +188,8 @@ struct trigger_helper
    }
 };
 
-#pragma warning(default:4244)
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 LBLOG_NAMESPACE_END

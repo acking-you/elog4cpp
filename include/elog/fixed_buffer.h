@@ -12,7 +12,10 @@ namespace detail {
 enum { kSmallBuffer = 4096, kLargeBuffer = 4096 * 1024 };
 template <int SIZE>
 
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable: 4018)
+#endif
 
 class FixedBuffer : noncopyable
 {
@@ -41,6 +44,8 @@ private:
 };
 }   // namespace detail
 
-#pragma warning(default:4018)
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 LBLOG_NAMESPACE_END

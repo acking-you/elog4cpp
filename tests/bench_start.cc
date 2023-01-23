@@ -12,6 +12,11 @@ struct before_hook{
 
 before_hook s_h;
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4244)
+#endif
+
 TEST(bench, bench_start)
 {
    one_thread_async(10,1e4);
@@ -26,3 +31,7 @@ TEST(bench, bench_start)
    multi_thread_async(10,1e3);
    multi_thread_async_third_part(10,1e3);
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

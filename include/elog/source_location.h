@@ -3,7 +3,11 @@
 
 #include "micros.h"
 
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable:4067)
+#endif
+
 LBLOG_NAMESPACE_BEGIN
 struct source_location
 {
@@ -72,4 +76,7 @@ private:
    const std::uint_least32_t columnOffset;
 };
 LBLOG_NAMESPACE_END
-#pragma warning(default:4067)
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

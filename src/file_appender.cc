@@ -14,7 +14,10 @@ USING_LBLOG_DETAIL
 //'e' 代表O_CLOEXEC 防止fork多进程文件描述符未关闭
 FileAppender::FileAppender(const char* filename) { init(filename); }
 
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable:4996)
+#endif
 
 void FileAppender::init(const char* filename)
 {
@@ -106,3 +109,7 @@ size_t FileAppender::write(const char* line, size_t len)
    }
    return sz;
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

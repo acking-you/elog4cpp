@@ -238,7 +238,10 @@ struct config
 AUTO_GEN_NON_INTRUSIVE(config, roll_size, flush_interval, out_console, out_file,
                        flag, level, formatter)
 
+#ifdef _MSC_VER
+#pragma warning(push)
 #pragma warning(disable : 4996)
+#endif
 
 void GlobalConfig::loadFromJSON(const char* filename)
 {
@@ -332,3 +335,7 @@ void GlobalConfig::loadToJSON(const char* filename)
    object.at("comments").ref = std::move(list);
    ejson::Parser::ToFile(filename, object, 2);
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
