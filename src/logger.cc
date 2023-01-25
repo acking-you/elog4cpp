@@ -37,7 +37,7 @@ void LoggerImpl::LogFile(Config* config, context const& ctx)
 {
    assert(config != nullptr);
 
-   fmt::memory_buffer buffer;
+   auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kFile);
    // 将数据写入Async缓冲区
    m_logging->append(buffer.data(), static_cast<int>(buffer.size()));
@@ -47,7 +47,7 @@ void LoggerImpl::LogConsole(Config* config, const context& ctx)
 {
    assert(config != nullptr);
 
-   fmt::memory_buffer buffer;
+   auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kConsole);
    buffer.push_back('\0');   // with c-style
 
@@ -62,7 +62,7 @@ void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
 {
    assert(config != nullptr);
 
-   fmt::memory_buffer buffer;
+   auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kConsole);
    buffer.push_back('\0');   // with c-style
    platform::CallFPutsUnlocked(buffer.data(), stdout);
@@ -95,13 +95,20 @@ void LoggerImpl::DoConfigLog(Config* config, const context& ctx)
    }
 }
 
-std::unique_ptr<LogStorage> LogStorage::Get()
-{
-   return elog::make_unique<LogStorage>();
-}
-
 Log& Log::instance()
 {
-   thread_local Log t_log(elog::kDebug);
+   thread_local Log t_log;
    return t_log;
+}
+
+logger_helper elog::Check(bool cond, source_location const& location)
+{
+   if (cond) { return logger_helper{location}; }
+   return {};
+}
+
+void elog::CheckIfFatal(bool cond, source_location const& location,
+                        const char* text)
+{
+   if (cond) { Check(false, location).fatal(text); }
 }

@@ -12,6 +12,10 @@ LBLOG_NAMESPACE_BEGIN
 struct source_location
 {
 public:
+   source_location()
+     : fileName(nullptr), functionName(nullptr), lineNumber(0), columnOffset(0)
+   {
+   }
 #if defined(_WIN32) and _MSC_VER >= 1920
 
    static constexpr source_location current(

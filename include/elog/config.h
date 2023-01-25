@@ -8,20 +8,25 @@ LBLOG_NAMESPACE_BEGIN
 
 struct Config
 {
-   callback_t log_before;
-   callback_t log_after;
+   Flags       log_flag  = Flags::kStdFlags;
+   Levels      log_level = Levels::kDebug;
+   const char* log_name  = nullptr;
+   callback_t  log_before;
+   callback_t  log_after;
    formatter_t log_formatter = formatter::defaultFormatter;   // 默认的formatter
-   Flags  log_flag  = Flags::kStdFlags;
-   Levels log_level = Levels::kDebug;
    auto setFlag(Flags flag) -> Config&;
+
+   auto setName(const char* name) -> Config&;
 
    auto setLevel(Levels level) -> Config&;
 
-   auto setBefore(callback_t function) -> Config&;
+   auto setBefore(callback_t const&function) -> Config&;
 
-   auto setAfter(callback_t function) -> Config&;
+   auto setAfter(callback_t const&function) -> Config&;
 
-   auto setFormatter(formatter_t formatter) -> Config&;
+   auto setFormatter(formatter_t const&formatter) -> Config&;
+
+   [[nodiscard]] auto level() const -> Levels { return log_level; }
 };
 
 struct GlobalConfig : Config
@@ -41,8 +46,8 @@ struct GlobalConfig : Config
 
    auto enableConsole(bool s) -> GlobalConfig&;
 
-   void loadToJSON(const char* filename);
-   void loadFromJSON(const char* filename);
+   auto loadToJSON(const char* filename) -> GlobalConfig&;
+   auto loadFromJSON(const char* filename) -> GlobalConfig&;
 };
 
 LBLOG_NAMESPACE_END

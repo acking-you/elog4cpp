@@ -63,66 +63,11 @@ inline const char* GET_ANSI_COLOR_BY_LEVEL(int level)
 #define IS_SET(log_flag_, flags_) (INT(log_flag_) & INT(flags_))
 }   // namespace
 
-void formatter::defaultFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
-                      Appenders outType)
+void formatter::defaultFormatter(Config* config, context const& ctx,
+                                 buffer_t& buffer, Appenders outType)
 {
    assert(config != nullptr);
-   buffer_t t_outputBuffer(&buffer);
-   // RAII before after call
-   auto helper =
-     trigger_helper(&t_outputBuffer, &config->log_before, &config->log_after);
-
-   // prepare data
-   auto  tid       = ProcessInfo::GetTid();
-   auto* levelText = GET_LEVEL_TEXT(ctx.level);
-   auto* funcName =
-     IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
-   auto* filename =
-     IS_SET(config->log_flag, Flags::kLongname)
-       ? ctx.long_filename
-       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
-                                                      : nullptr);
-   Flags logFlag = config->log_flag;
-   if (IS_SET(logFlag, Flags::kDate))   // y-m-d
-   {
-      fmt::format_to(std::back_inserter(buffer), "[{}]",
-                     Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
-   }
-   // log level
-   fmt::format_to(std::back_inserter(buffer), "{}", levelText);
-   if (IS_SET(logFlag, Flags::kThreadId))
-   {   // log thread id
-      fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
-   }
-   // log filename
-   if (filename)
-   {
-      fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
-                     ctx.line);   // log file-line
-   }
-   // log func_name
-   if (funcName)
-   {
-      fmt::format_to(std::back_inserter(buffer), "[func:{}]",
-                     funcName);   // log file-line
-   }
-   if (ctx.level >= INT(Levels::kError))
-   {   // if level >= Error,get the error info
-      fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
-                     Util::getErrorInfo(errno));
-   }
-   else
-   {
-      fmt::format_to(std::back_inserter(buffer), ":{}",
-                     ctx.text);   // log info
-   }
-}
-
-void formatter::colorfulFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
-                       Appenders outType)
-{
-   assert(config != nullptr);
-   buffer_t t_outputBuffer;
+   output_buf_t t_outputBuffer;
    t_outputBuffer.buf = &buffer;
    // RAII before after call
    auto helper =
@@ -139,6 +84,88 @@ void formatter::colorfulFormatter(Config* config, context const& ctx, fmt_buffer
        : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
                                                       : nullptr);
    Flags logFlag = config->log_flag;
+   // log name
+   if (config->log_name)
+   {
+      fmt::format_to(fmt::appender(buffer), "[{}]", config->log_name);
+   }
+
+   // log date
+   if (IS_SET(logFlag, Flags::kDate))   // y-m-d
+   {
+      fmt::format_to(fmt::appender(buffer), "[{}]",
+                     Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
+   }
+   // log level
+   fmt::format_to(fmt::appender(buffer), "{}", levelText);
+
+   if (IS_SET(logFlag, Flags::kThreadId))
+   {   // log thread id
+      fmt::format_to(fmt::appender(buffer), "[tid:{:d}]", tid);
+   }
+   if (filename)
+   {
+      fmt::format_to(fmt::appender(buffer), "[{}:{:d}]", filename,
+                     ctx.line);   // log file-line
+   }
+   // log func_name
+   if (funcName)
+   {
+      fmt::format_to(fmt::appender(buffer), "[func:{}]",
+                     funcName);   // log file-line
+   }
+
+   fmt::string_view text{ctx.text.data(), ctx.text.size()};
+
+   if (ctx.level >= INT(Levels::kError) && errno)
+   {   // if level >= Error,get the error info
+      fmt::format_to(fmt::appender(buffer), ": {} system error:{}", text,
+                     Util::getErrorInfo(errno));   // 打印系统错误提示信息
+   }
+   else
+   {
+      fmt::format_to(fmt::appender(buffer), ": {}",
+                     text);   // log info
+   }
+}
+
+void formatter::colorfulFormatter(Config* config, context const& ctx,
+                                  buffer_t& buffer, Appenders outType)
+{
+   assert(config != nullptr);
+   output_buf_t t_outputBuffer;
+   t_outputBuffer.buf = &buffer;
+   // RAII before after call
+   auto helper =
+     trigger_helper(&t_outputBuffer, &config->log_before, &config->log_after);
+
+   // prepare data
+   auto  tid       = ProcessInfo::GetTid();
+   auto* levelText = GET_LEVEL_TEXT(ctx.level);
+   auto* funcName =
+     IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
+   auto* filename =
+     IS_SET(config->log_flag, Flags::kLongname)
+       ? ctx.long_filename
+       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+                                                      : nullptr);
+   Flags logFlag = config->log_flag;
+   // log name
+   if (config->log_name)
+   {
+      if (outType == kConsole)
+      {
+         fmt::format_to(std::back_inserter(buffer),
+                        fg(GET_COLOR_BY_LEVEL(ctx.level)), "[{}]",
+                        config->log_name);
+      }
+      else
+      {
+         fmt::format_to(std::back_inserter(buffer), "[{}]", config->log_name);
+      }
+   }
+
+   // log date
    if (IS_SET(logFlag, Flags::kDate))   // y-m-d
    {
       fmt::format_to(std::back_inserter(buffer), "[{}]",
@@ -169,42 +196,44 @@ void formatter::colorfulFormatter(Config* config, context const& ctx, fmt_buffer
       fmt::format_to(std::back_inserter(buffer), "[func:{}]",
                      funcName);   // log file-line
    }
+   fmt::string_view text{ctx.text.data(), ctx.text.size()};
    if (outType == Appenders::kConsole)   // colorful
    {
-      if (ctx.level >= INT(Levels::kError))
+      if (ctx.level >= INT(Levels::kError) && errno)
       {   // if level >= Error,get the error info
          fmt::format_to(std::back_inserter(buffer),
-                        fg(GET_COLOR_BY_LEVEL(ctx.level)), ":{} ERR:{}",
-                        ctx.text,
-                        Util::getErrorInfo(errno));   // 打印提示信息
+                        fg(GET_COLOR_BY_LEVEL(ctx.level)),
+                        ": {} system error:{}", text,
+                        Util::getErrorInfo(errno));   // 打印系统错误提示信息
       }
       else
       {
          fmt::format_to(std::back_inserter(buffer),
-                        fg(GET_COLOR_BY_LEVEL(ctx.level)), ":{}",
-                        ctx.text);   // log info
+                        fg(GET_COLOR_BY_LEVEL(ctx.level)), ": {}",
+                        text);   // log info
       }
    }
    else
    {   // nocolor
-      if (ctx.level >= INT(Levels::kError))
+      if (ctx.level >= INT(Levels::kError) && errno)
       {   // if level >= Error,get the error info
-         fmt::format_to(std::back_inserter(buffer), ":{} ERR:{}", ctx.text,
+         fmt::format_to(std::back_inserter(buffer), ": {} system error:{}",
+                        text,
                         Util::getErrorInfo(errno));   // 打印提示信息
       }
       else
       {
-         fmt::format_to(std::back_inserter(buffer), ":{}",
-                        ctx.text);   // log info
+         fmt::format_to(std::back_inserter(buffer), ": {}",
+                        text);   // log info
       }
    }
 }
 
-void formatter::jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& buffer,
-                   Appenders outType)
+void formatter::jsonFormatter(Config* config, context const& ctx,
+                              buffer_t& buffer, Appenders outType)
 {
    assert(config != nullptr);
-   buffer_t t_outputBuffer;
+   output_buf_t t_outputBuffer;
    t_outputBuffer.buf = &buffer;
    // RAII before after call
    auto helper =
@@ -222,24 +251,15 @@ void formatter::jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& 
        : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
                                                       : nullptr);
    t_outputBuffer.push_back('{');
-   if (dateText)
+   if (config->log_name)
    {
-      t_outputBuffer.append("\"time\":");
-      t_outputBuffer.push_back('\"');
-      t_outputBuffer.append(dateText);
-      t_outputBuffer.push_back('\"');
+      t_outputBuffer.formatTo(R"("name":"{}", )", config->log_name);
    }
-   if (levelText)
-   {
-      t_outputBuffer.append(", \"level\":");
-      t_outputBuffer.push_back('\"');
-      t_outputBuffer.append(levelText);
-      t_outputBuffer.push_back('\"');
-   }
+   if (dateText) { t_outputBuffer.formatTo(R"("time":"{}")", dateText); }
+   if (levelText) { t_outputBuffer.formatTo(R"(, "level":"{}")", levelText); }
    if (IS_SET(config->log_flag, Flags::kThreadId))
    {
-      t_outputBuffer.append(", \"tid\":");
-      t_outputBuffer.formatTo("\"{:d}\"", ProcessInfo::GetTid());
+      t_outputBuffer.formatTo(R"(, "tid":"{:d}")", ProcessInfo::GetTid());
    }
    if (filename)
    {
@@ -247,34 +267,24 @@ void formatter::jsonFormatter(Config* config, context const& ctx, fmt_buffer_t& 
       {
          t_outputBuffer.formatTo(R"(, "file":"{}:{:d}")", filename, ctx.line);
       }
-      else
-      {
-         t_outputBuffer.append(", \"file\":");
-         t_outputBuffer.push_back('\"');
-         t_outputBuffer.append(filename);
-         t_outputBuffer.push_back('\"');
-      }
+      else { t_outputBuffer.formatTo(R"(, "file":"{}")", filename); }
    }
-   if (funcName)
-   {
-      t_outputBuffer.append(", \"func\":");
-      t_outputBuffer.push_back('\"');
-      t_outputBuffer.append(funcName);
-      t_outputBuffer.push_back('\"');
-   }
-   t_outputBuffer.formatTo(R"(, "message":"{}")", ctx.text);
+   if (funcName) { t_outputBuffer.formatTo(R"(, "func":"{}")", funcName); }
+
+   t_outputBuffer.formatTo(R"(, "message":"{}")",
+                           fmt::string_view{ctx.text.data(), ctx.text.size()});
    t_outputBuffer.push_back('}');
 }
 
-
 // use %T:time,%t:tid,%F:filepath,%f:func, %e:error info
-//  %L:long levelText,%l:short levelText,%v:message ,%c color start %C color end
-void customStringFormatter(StringView format_str, Config* config,
-                           context const& ctx, fmt_buffer_t& buffer,
+//  %L:long levelText,%l:short levelText,%n:name,%v:message ,%c color start %C
+//  color end
+void customStringFormatter(const StringView& format_str, Config* config,
+                           context const& ctx, buffer_t& buffer,
                            Appenders outType)
 {
    assert(config != nullptr);
-   buffer_t outputBuffer;
+   output_buf_t outputBuffer;
    outputBuffer.buf = &buffer;
    // RAII before after call
    auto helper =
@@ -329,7 +339,7 @@ void customStringFormatter(StringView format_str, Config* config,
             break;
          }
          case "%e"_i: {
-            if (ctx.level < INT(Levels::kError)) break;
+            if (ctx.level < INT(Levels::kError) && errno == 0) break;
             outputBuffer.append(Util::getErrorInfo(errno));
             break;
          }
@@ -345,6 +355,10 @@ void customStringFormatter(StringView format_str, Config* config,
          }
          case "%v"_i: {
             outputBuffer.append(ctx.text);
+            break;
+         }
+         case "%n"_i: {
+            outputBuffer.append(config->log_name);
             break;
          }
          case "%c"_i: {

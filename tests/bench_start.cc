@@ -19,17 +19,17 @@ before_hook s_h;
 
 TEST(bench, bench_start)
 {
-   one_thread_async(10,1e4);
-   one_thread_async_third_part(10,1e4);
+   one_thread_async(1e4,1);
+   one_thread_async_third_part(1e4,1);
 
-   one_thread_sync(10,1e3);
-   one_thread_sync_third_part(10,1e3);
+   one_thread_sync(1e6,1);
+   one_thread_sync_third_part(1e6,1);
 
-   multi_thread_sync(10,1e3);
-   multi_thread_sync_third_part(10,1e3);
+   multi_thread_sync(1000,1);
+   multi_thread_sync_third_part(1000,1);
 
-   multi_thread_async(10,1e3);
-   multi_thread_async_third_part(10,1e3);
+   multi_thread_async(1000,1);
+   multi_thread_async_third_part(1000,1);
 }
 
 #ifdef _MSC_VER

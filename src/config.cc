@@ -5,7 +5,6 @@
 
 #include <ejson/parser.h>
 
-#include <array>
 #include <iostream>
 #include <utility>
 
@@ -49,25 +48,33 @@ auto Config::setLevel(Levels level) -> Config&
    return *this;
 }
 
-auto Config::setBefore(std::function<void(buffer_t&)> function) -> Config&
+auto Config::setBefore(callback_t const& function) -> Config&
 {
-   this->log_before = std::move(function);
+   this->log_before = function;
    return *this;
 }
-auto Config::setAfter(std::function<void(buffer_t&)> function) -> Config&
+auto Config::setAfter(callback_t const& function) -> Config&
 {
-   this->log_after = std::move(function);
-   return *this;
-}
-
-auto Config::setFormatter(formatter_t formatter) -> Config&
-{
-   log_formatter = std::move(formatter);
+   this->log_after = function;
    return *this;
 }
 
+auto Config::setFormatter(formatter_t const& formatter) -> Config&
+{
+   log_formatter = formatter;
+   return *this;
+}
+auto Config::setName(const char* name) -> Config&
+{
+   log_name = name;
+   return *this;
+}
+
+namespace detail {
 struct config
 {
+   AUTO_GEN_INTRUSIVE(detail::config, roll_size, flush_interval, out_console,
+                      out_file, flag, level, formatter)
    int        roll_size{};
    int        flush_interval{};
    bool       out_console{};
@@ -79,7 +86,7 @@ struct config
 
    static const char* to_formatter(const formatter_t& formatter)
    {
-      auto f = formatter.target<void (*)(Config*, context const&, fmt_buffer_t&,
+      auto f = formatter.target<void (*)(Config*, context const&, buffer_t&,
                                          Appenders appenderType)>();
       if (!f) return nullptr;
       if (*f == formatter::defaultFormatter) { return "default"; }
@@ -167,37 +174,37 @@ struct config
       size_t size{};
       if (flags | kDate)
       {
-         flags_append(buf+size, "date+");
+         flags_append(buf + size, "date+");
          size += 5;
       }
       if (flags | kTime)
       {
-         flags_append(buf+size, "time+");
+         flags_append(buf + size, "time+");
          size += 5;
       }
       if (flags | kLine)
       {
-         flags_append(buf+size, "line+");
+         flags_append(buf + size, "line+");
          size += 5;
       }
       if (flags | kThreadId)
       {
-         flags_append(buf+size, "tid+");
+         flags_append(buf + size, "tid+");
          size += 4;
       }
       if (flags | kFuncName)
       {
-         flags_append(buf+size, "func+");
+         flags_append(buf + size, "func+");
          size += 5;
       }
       if (flags | kLongname)
       {
-         flags_append(buf+size, "file+");
+         flags_append(buf + size, "file+");
          size += 5;
       }
       if (flags | kShortname)
       {
-         flags_append(buf+size, "short_file+");
+         flags_append(buf + size, "short_file+");
          size += 11;
       }
       buf[size - 1] = '\0';
@@ -234,20 +241,19 @@ struct config
       return "debug";
    }
 };
-
-AUTO_GEN_NON_INTRUSIVE(config, roll_size, flush_interval, out_console, out_file,
-                       flag, level, formatter)
+}   // namespace detail
 
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4996)
 #endif
 
-void GlobalConfig::loadFromJSON(const char* filename)
+auto GlobalConfig::loadFromJSON(const char* filename) -> GlobalConfig&
 {
-   thread_local config t_config;
-   thread_local char   t_filepath[1024];
-   thread_local char   t_fmt_string[1024];
+   thread_local detail::config t_config;
+   thread_local char           t_filepath[1024];
+   thread_local char           t_log_name[1024];
+   thread_local char           t_fmt_string[1024];
 
    auto& object = ejson::Parser::FromFile(filename).at("elog").ref;
    from_json(object, t_config);
@@ -261,7 +267,7 @@ void GlobalConfig::loadFromJSON(const char* filename)
    {
       if (t_config.out_file.size() > 1024)
       {
-         EJSON_THROW_ERROR_POS("filepath length must be less than 1024");
+         EJSON_THROW_ERROR_POS("`filepath` length must be less than 1024");
       }
       std::strncpy(t_filepath, t_config.out_file.data(),
                    t_config.out_file.size());
@@ -272,9 +278,19 @@ void GlobalConfig::loadFromJSON(const char* filename)
       auto data = object.at("fmt_string").ref.cast<ejson::str_t>();
       if (data.size() > 1024)
       {
-         EJSON_THROW_ERROR_POS("fmt_string length must be less than 1024");
+         EJSON_THROW_ERROR_POS("`fmt_string` length must be less than 1024");
       }
       std::strncpy(t_fmt_string, data.data(), data.size());
+   }
+
+   if (object.has_key("name"))
+   {
+      auto data = object.at("name").ref.cast<ejson::str_t>();
+      if (data.size() > 1024)
+      {
+         EJSON_THROW_ERROR_POS("`name` length must be less than 1024");
+      }
+      std::strncpy(t_log_name, data.data(), data.size());
    }
 
    // 以mb为单位
@@ -287,29 +303,33 @@ void GlobalConfig::loadFromJSON(const char* filename)
    log_rollSize      = t_config.roll_size * (1024 * 1024);
    log_flushInterval = t_config.flush_interval;
    log_console       = t_config.out_console;
-   log_flag          = static_cast<Flags>(config::from_flags(t_config.flag));
-   log_level         = static_cast<Levels>(config::from_level(t_config.level));
-   log_formatter     = config::from_formatter(
+   log_flag  = static_cast<Flags>(detail::config::from_flags(t_config.flag));
+   log_level = static_cast<Levels>(detail::config::from_level(t_config.level));
+   log_formatter = detail::config::from_formatter(
      t_config.formatter, object.has_key("fmt_string") ? t_fmt_string : nullptr);
+   log_name = object.has_key("name") ? t_log_name : nullptr;
+
+   return *this;
 }
 
 #pragma warning(default : 4996)
 
-void GlobalConfig::loadToJSON(const char* filename)
+auto GlobalConfig::loadToJSON(const char* filename) -> GlobalConfig&
 {
-   thread_local config t_config;
+   thread_local detail::config t_config;
    // 以mb为单位
    t_config.roll_size      = log_rollSize / (1024 * 1024);
    t_config.flush_interval = log_flushInterval;
    t_config.out_console    = log_console;
    t_config.out_file       = log_filepath ? log_filepath : "null";
-   t_config.flag           = config::to_flags(log_flag);
-   t_config.level          = config::to_level(log_level);
-   t_config.formatter      = config::to_formatter(log_formatter);
+   t_config.flag           = detail::config::to_flags(log_flag);
+   t_config.level          = detail::config::to_level(log_level);
+   t_config.formatter      = detail::config::to_formatter(log_formatter);
    auto object             = ejson::JObject::Dict();
    object.at("elog").get_from(t_config);
    auto list = ejson::JObject::List();
    list.push_back("下面的数值都是默认生成的注释，用于说明参数填写的注意事项");
+   list.push_back("name:可选参数，默认不填则日志输出无name");
    list.push_back("roll_size:滚动日志的阈值，以mb为单位");
    list.push_back("flush_interval:日志后台刷盘的时间，以秒为单位");
    list.push_back("out_console:是否开启输出控制台，是bool值");
@@ -334,6 +354,8 @@ void GlobalConfig::loadToJSON(const char* filename)
                   "start %C color end");
    object.at("comments").ref = std::move(list);
    ejson::Parser::ToFile(filename, object, 2);
+
+   return *this;
 }
 
 #ifdef _MSC_VER

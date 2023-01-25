@@ -12,7 +12,7 @@ struct Timer
 {
    std::chrono::time_point<std::chrono::high_resolution_clock> startPoint;
    void    start() { startPoint = std::chrono::high_resolution_clock::now(); }
-   int64_t end() const
+   [[nodiscard]] int64_t end() const
    {
       auto endPoint = std::chrono::high_resolution_clock::now();
       return std::chrono::time_point_cast<std::chrono::nanoseconds>(endPoint)
@@ -35,22 +35,16 @@ void set_config()
 
 void set_timer_config()
 {
-   auto customFormatter =
-     formatter::customFromString("[%T][%t][\"%F\"][%f][%c%l%C]: %c[%v]%C");
-   GlobalConfig::Get()
-     .enableConsole(true)
-     .setFilepath("../../log/")
-     .setFormatter(customFormatter)
-     .setFlag(Flags::kStdFlags + Flags::kShortname + Flags::kThreadId)
-     .setBefore([](buffer_t& bf) {
+   GlobalConfig::Get().loadFromJSON("../../config.json")
+     .setBefore([](output_buf_t& bf) {
         bf.setContext(Timer{});
         auto& tm = any_cast<Timer&>(bf.getMutableContext());
         tm.start();
      })
-     .setAfter([](buffer_t& bf) {
+     .setAfter([](output_buf_t& bf) {
         auto& tm      = any_cast<Timer&>(bf.getMutableContext());
         auto   consume = tm.end();
-        bf.formatTo("-----format takes:{}ns", consume);
+        bf.formatTo("-----formatter takes:{}ns", consume);
      });
 }
 
@@ -63,8 +57,14 @@ TEST(test, timer_logger)
    {
       Timer tm;
       tm.start();
-      //      info.with().println("test1", "test2", "test3",
-      //                          std::vector<int>{32, 32, 23, 3});
+      info.println("test1", "test2", "test3",std::vector<int>{3243,242,324});
       warn.printf("sum of time:{}ns", tm.end());
    }
+}
+
+TEST(test,loadFromJSON){
+   elog::GlobalConfig::Get().loadFromJSON("../../config.json");
+//   elog::Log::info("test1 {}","hello world");
+//   elog::Log::Get(elog::kError).with().printf("test2 {}",234);
+   elog::Log::info("你好");
 }

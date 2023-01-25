@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "bench_interface.h"
 #include "common_func.h"
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
@@ -10,6 +12,7 @@ std::shared_ptr<spdlog::logger> s_log_async;
 
 void before_third_part_bench()
 {
+   spdlog::init_thread_pool(1024*1024*4, 1);
    s_log_sync = spdlog::basic_logger_mt("sync_log", "../../log/test.log");
    s_log_sync->set_pattern(
      "[%Y-%m-%d %H:%M:%S.%f %z][tid%t][%@,%!][%n][%l]: %v");

@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -45,14 +46,24 @@ inline Flags operator+(Flags lhs, Flags rhs)
    return static_cast<Flags>(lhs | rhs);
 }
 
-inline Levels operator+(Levels lhs, Levels rhs)
+inline bool operator<=(Levels lhs, Levels rhs)
 {
-   return static_cast<Levels>(lhs | rhs);
+   return static_cast<int>(lhs) <= static_cast<int>(rhs);
 }
 
-inline Appenders operator+(Appenders lhs, Appenders rhs)
+inline bool operator>=(Levels lhs, Levels rhs)
 {
-   return static_cast<Appenders>(lhs | rhs);
+   return static_cast<int>(lhs) >= static_cast<int>(rhs);
+}
+
+inline bool operator<(Levels lhs, Levels rhs)
+{
+   return static_cast<int>(lhs) < static_cast<int>(rhs);
+}
+
+inline bool operator>(Levels lhs, Levels rhs)
+{
+   return static_cast<int>(lhs) > static_cast<int>(rhs);
 }
 
 struct Config;
@@ -60,10 +71,10 @@ struct context;
 class buffer_helper;
 class OutputBuffer;
 
-using fmt_buffer_t = fmt::memory_buffer;
-using buffer_t     = OutputBuffer;
-using callback_t   = std::function<void(buffer_t&)>;
-using formatter_t  = std::function<void(Config*, context const&, fmt_buffer_t&,
+using buffer_t     = fmt::memory_buffer;
+using output_buf_t = OutputBuffer;
+using callback_t   = std::function<void(output_buf_t&)>;
+using formatter_t  = std::function<void(Config*, context const&, buffer_t&,
                                        Appenders appenderType)>;
 
 template <bool B, typename T = void>
@@ -71,7 +82,6 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 template <typename... Args>
 using format_string =
   fmt::basic_format_string<char, fmt::type_identity_t<Args>...>;
-
 
 inline constexpr int OP_INT(const StringView& sv)
 {
@@ -96,7 +106,7 @@ struct context
    const char*         short_filename{};
    const char*         long_filename{};
    const char*         func_name{};
-   std::string         text;
+   StringView          text;
    // 计算中间经常可变的位置信息长度，可用于通过memset优化清零
    static unsigned int GetNoTextAndLevelLength(context& ctx)
    {
@@ -108,9 +118,9 @@ struct context
 class buffer_helper
 {
 public:
-   fmt_buffer_t* buf{};
+   buffer_t* buf{};
    buffer_helper() = default;
-   explicit buffer_helper(fmt_buffer_t* fmt_buf) : buf(fmt_buf) {}
+   explicit buffer_helper(buffer_t* fmt_buf) : buf(fmt_buf) {}
    auto startWith(const StringView& sv) -> bool
    {
       auto buf_sv = make_view();
@@ -136,7 +146,6 @@ public:
    void push_back(char ch) const
    {
       assert(buf != nullptr);
-
       buf->push_back(ch);
    }
 
@@ -162,7 +171,7 @@ private:
 
 public:
    OutputBuffer() = default;
-   explicit OutputBuffer(fmt_buffer_t* fmt_buf) : buffer_helper(fmt_buf) {}
+   explicit OutputBuffer(buffer_t* buf) : buffer_helper(buf) {}
 
    void setContext(Any_t v) { m_ctx = std::move(v); }
    [[nodiscard]] auto getContext() const -> const Any_t& { return m_ctx; }
@@ -172,9 +181,10 @@ public:
 // RAII for trigger before and after
 struct trigger_helper
 {
-   buffer_t*   buffer{};
-   callback_t* after{};
-   trigger_helper(buffer_t* buffer_, callback_t* before_, callback_t* after_)
+   output_buf_t* buffer{};
+   callback_t*   after{};
+   trigger_helper(output_buf_t* buffer_, callback_t* before_,
+                  callback_t* after_)
      : buffer(buffer_), after(after_)
    {
       assert(buffer_ != nullptr);

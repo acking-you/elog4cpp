@@ -106,197 +106,439 @@ void* Ptr(T* ptr)
    return ptr;
 }
 
-// A small helper for CHECK_NOTNULL().
-template <typename T>
-T* CheckNotNull(const char* file, const char* shortFile, int line,
-                const char* text, T* ptr)
-{
-   if (ptr == NULL)
-   {
-      context ctx;
-      ctx.level          = static_cast<int>(Levels::kFatal);
-      ctx.short_filename = shortFile;
-      ctx.long_filename  = file;
-      ctx.text           = text;
-      ctx.line           = line;
-      detail::DoLog(ctx);
-   }
-   return ptr;
-}
+// A small helper for CHECK().
+struct logger_helper;
 
-#define CHECK_NOTNULL(ptr)                                                     \
-   elog::CheckNotNull(__FILE__, elog::detail::GetShortName(__FILE__),          \
-                      __LINE__, "nullptr error", ptr)
+logger_helper Check(bool cond, source_location const& location);
+
+// A small helper for CHECK_EQ, CHECK_NE, CHECK_LE, CHECK_LT,
+// CHECK_GE,CHECK_GT,CHECK_NOTNULL().
+void CheckIfFatal(bool cond, source_location const& location, const char* text);
+
 // wait for async logging done
 inline void WaitForDone() { detail::LoggerImpl::GetInstance().waitForDone(); }
 
-// only use LogStorage::Get
-struct LogStorage : noncopyable
-{
-   explicit LogStorage() = default;
-
-public:
-   friend class Log;
-   static std::unique_ptr<LogStorage> Get();
-
-private:
-   context      ctx_;
-   fmt_buffer_t buffer_;
-};
+template <typename... Args>
+using format_string_t = fmt::format_string<Args...>;
+using loc             = elog::source_location;
 
 // log by class
 class Log : noncopyable
 {
-public:
-   using ConfigPtr     = std::unique_ptr<Config>;
-   using LogStoragePtr = std::unique_ptr<LogStorage>;
+   Log() = default;
 
-   explicit Log(Levels level) : m_storage(LogStorage::Get()) {}
+public:
+   friend struct logger_helper;
+   using ConfigPtr = std::unique_ptr<Config>;
+
+   explicit Log(Levels level) : m_level(level) {}
 
    explicit Log(Levels level, ConfigPtr config)
-     : m_storage(LogStorage::Get()), m_config(std::move(config))
+     : m_level(level), m_config(std::move(config))
    {
    }
 
    Log(Log&& log) noexcept
-     : m_storage(std::move(log.m_storage)), m_config(std::move(log.m_config))
+     : m_level(log.m_level), m_config(std::move(log.m_config))
    {
    }
 
    Log& operator=(Log&& log) noexcept
    {
-      this->m_config  = std::move(log.m_config);
-      this->m_storage = std::move(log.m_storage);
+      this->m_level  = log.m_level;
+      this->m_config = std::move(log.m_config);
       return *this;
    }
 
-   template <typename T                          = source_location,
-             typename std::enable_if<std::is_same<typename std::decay<T>::type,
-                                                  source_location>::value,
-                                     bool>::type = true>
-   inline const Log& with(T const& location = T::current()) const
-   {
-      assert(m_storage != nullptr);
-      initLocation(location);
-      return *this;
-   }
+   void set_level(Levels level) { m_level = level; }
+
+   Levels get_level() { return m_level; }
 
    template <typename T, typename... Args>
    void println(T&& first, Args&&... args) const
    {
-      assert(m_storage != nullptr);
-      buffer_helper{&m_storage->buffer_}.formatTo("{}, ", first);
-      println(std::forward<Args>(args)...);
+      context  ctx;
+      buffer_t buffer;
+      fmt::format_to(std::back_inserter(buffer), "{}, ", std::forward<T>(first));
+      println_(ctx, buffer, std::forward<Args>(args)...);
+   }
+
+   template <typename T, typename... Args>
+   void println(source_location const& loc, T&& first, Args&&... args) const
+   {
+      context ctx;
+      init_context_(ctx, loc);
+      buffer_t buffer;
+      fmt::format_to(std::back_inserter(buffer), "{}, ", first);
+      println_(ctx, buffer, std::forward<Args>(args)...);
+   }
+
+#define ELOG_DECAY_IS(a, b) std::is_same<typename std::decay<a>::type, b>::value
+
+#define ELOG_ENABLE_NOT_STRING                                                 \
+   (!ELOG_DECAY_IS(T, StringView) && !ELOG_DECAY_IS(T, std::string) &&         \
+    !ELOG_DECAY_IS(T, const char*) && !ELOG_DECAY_IS(T, char*))
+
+#define ELOG_ENABLE_IS_STRING                                                  \
+   (ELOG_DECAY_IS(T, StringView) || ELOG_DECAY_IS(T, std::string) ||           \
+    ELOG_DECAY_IS(T, const char*) || ELOG_DECAY_IS(T, char*))
+
+   template <typename T,
+             typename std::enable_if<ELOG_ENABLE_IS_STRING, bool>::type = true>
+   void println(T&& first) const
+   {
+      context ctx;
+      ctx.text = first;
+      log_it_(ctx);
+   }
+
+   template <typename T,
+             typename std::enable_if<ELOG_ENABLE_NOT_STRING, bool>::type = true>
+   void println(T&& first) const
+   {
+      context  ctx;
+      buffer_t buffer;
+      fmt::format_to(std::back_inserter(buffer), "{}", first);
+      ctx.text = StringView{buffer.data(), buffer.size()};
+      log_it_(ctx);
+   }
+
+   template <typename T,
+             typename std::enable_if<ELOG_ENABLE_IS_STRING, bool>::type = true>
+   void println(source_location const& loc, T&& first) const
+   {
+      context ctx;
+      init_context_(ctx, loc);
+      ctx.text = first;
+      log_it_(ctx);
+   }
+
+   template <typename T,
+             typename std::enable_if<ELOG_ENABLE_NOT_STRING, bool>::type = true>
+   void println(source_location const& loc, T&& first) const
+   {
+      context ctx;
+      init_context_(ctx, loc);
+      buffer_t buffer;
+      fmt::format_to(std::back_inserter(buffer), "{}", first);
+      ctx.text = StringView{buffer.data(), buffer.size()};
+      log_it_(ctx);
+   }
+
+   template <class T>
+   void printf(T&& first) const
+   {
+      println(first);
+   }
+
+   template <class T>
+   void printf(source_location const& loc, T&& first) const
+   {
+      println(loc, first);
+   }
+
+   template <typename... Args>
+   void printf(format_string_t<Args...> format, Args&&... args) const
+   {
+      context  ctx;
+      buffer_t buffer;
+      fmt::format_to(std::back_inserter(buffer), format,
+                     std::forward<Args>(args)...);
+      ctx.text = StringView{buffer.data(), buffer.size()};
+      log_it_(ctx);
+   }
+
+   template <typename... Args>
+   void printf(source_location const& loc, format_string_t<Args...> format,
+               Args&&... args) const
+   {
+      context ctx;
+      init_context_(ctx, loc);
+      buffer_t buffer;
+      fmt::format_to(std::back_inserter(buffer), format,
+                     std::forward<Args>(args)...);
+      ctx.text = StringView{buffer.data(), buffer.size()};
+      log_it_(ctx);
+   }
+
+   inline static Log& Get(Levels level)
+   {
+      Log& ret    = instance();
+      ret.m_level = level;
+      return ret;
+   }
+
+   template <typename... Args>
+   inline static void trace(format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kTrace).printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void trace(source_location const&   loc,
+                            format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kTrace).printf(loc, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void debug(format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kDebug).printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void debug(source_location const&   loc,
+                            format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kDebug).printf(loc, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void info(format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kInfo).printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void info(source_location const&   loc,
+                           format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kInfo).printf(loc, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void warn(format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kWarn).printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void warn(source_location const&   loc,
+                           format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kWarn).printf(loc, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void error(format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kError).printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void error(source_location const&   loc,
+                            format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kError).printf(loc, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void fatal(format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kFatal).printf(format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline static void fatal(source_location const&   loc,
+                            format_string_t<Args...> format, Args&&... args)
+   {
+      Get(kFatal).printf(loc, format, std::forward<Args>(args)...);
    }
 
    template <typename T>
-   void println(T&& first) const
+   inline static void trace(T const& format)
    {
-      assert(m_storage != nullptr);
-
-      buffer_helper{&m_storage->buffer_}.formatTo("{}", first);
-      m_storage->ctx_.text = fmt::to_string(m_storage->buffer_);
-      doLog();
-      clearLocation();
+      Get(kTrace).printf(format);
    }
 
-   template <typename... Args>
-   void printf(const char* format, Args&&... args) const
+   template <typename T>
+   inline static void trace(source_location const& loc, T const& format)
    {
-      assert(m_storage != nullptr);
-
-      m_storage->ctx_.text = fmt::format(format, std::forward<Args>(args)...);
-      doLog();
-      clearLocation();
+      Get(kTrace).printf(loc, format);
    }
 
-   template <typename... Args>
-   static void trace(const char* format, Args&&... args)
+   template <typename T>
+   inline static void debug(T const& format)
    {
-      auto& log = instance();
-      assert(log.m_storage != nullptr);
-      log.m_storage->ctx_.level = kTrace;
-      log.printf(format, std::forward<Args>(args)...);
+      Get(kDebug).printf(format);
    }
 
-   template <typename... Args>
-   static void debug(const char* format, Args&&... args)
+   template <typename T>
+   inline static void debug(source_location const loc, T const& format)
    {
-      auto& log = instance();
-      assert(log.m_storage != nullptr);
-
-      log.m_storage->ctx_.level = kDebug;
-      log.printf(format, std::forward<Args>(args)...);
+      Get(kDebug).printf(loc, format);
    }
 
-   template <typename... Args>
-   static void info(const char* format, Args&&... args)
+   template <typename T>
+   inline static void info(T const& format)
    {
-      auto& log = instance();
-      assert(log.m_storage != nullptr);
-
-      log.m_storage->ctx_.level = kInfo;
-      log.printf(format, std::forward<Args>(args)...);
+      Get(kInfo).printf(format);
    }
 
-   template <typename... Args>
-   static void warn(const char* format, Args&&... args)
+   template <typename T>
+   inline static void info(source_location const& loc, T const& format)
    {
-      auto& log = instance();
-      assert(log.m_storage != nullptr);
-
-      log.m_storage->ctx_.level = kWarn;
-      log.printf(format, std::forward<Args>(args)...);
+      Get(kInfo).printf(loc, format);
    }
 
-   template <typename... Args>
-   static void error(const char* format, Args&&... args)
+   template <typename T>
+   inline static void warn(T const& format)
    {
-      auto& log = instance();
-      assert(log.m_storage != nullptr);
-
-      log.m_storage->ctx_.level = kError;
-      log.printf(format, std::forward<Args>(args)...);
+      Get(kWarn).printf(format);
    }
 
-   template <typename... Args>
-   static void fatal(const char* format, Args&&... args)
+   template <typename T>
+   inline static void warn(source_location const& loc, T const& format)
    {
-      auto& log = instance();
-      assert(log.m_storage != nullptr);
+      Get(kWarn).printf(loc, format);
+   }
 
-      log.m_storage->ctx_.level = kFatal;
-      log.printf(format, std::forward<Args>(args)...);
+   template <typename T>
+   inline static void error(T const& format)
+   {
+      Get(kError).printf(format);
+   }
+
+   template <typename T>
+   inline static void error(source_location const& loc, T const& format)
+   {
+      Get(kError).printf(loc, format);
+   }
+
+   template <typename T>
+   inline static void fatal(T const& format)
+   {
+      Get(kFatal).printf(format);
+   }
+
+   template <typename T>
+   inline static void fatal(source_location const& loc, T const& format)
+   {
+      Get(kFatal).printf(loc, format);
    }
 
 private:
    static Log& instance();
 
-   void doLog() const
+   void log_it_(context& ctx) const
    {
+      ctx.level = m_level;
       detail::LoggerImpl::GetInstance().DoConfigLog(
-        m_config ? m_config.get() : &GlobalConfig::Get(), m_storage->ctx_);
+        m_config ? m_config.get() : &GlobalConfig::Get(), ctx);
    }
 
-   void initLocation(source_location const& location) const
+   template <typename T, typename... Args>
+   void println_(context& ctx, buffer_t& buffer, T&& first, Args&&... args) const
    {
-      m_storage->ctx_.line          = location.line();
-      m_storage->ctx_.func_name     = location.function_name();
-      m_storage->ctx_.long_filename = location.file_name();
-      m_storage->ctx_.short_filename =
-        detail::GetShortName(m_storage->ctx_.long_filename);
+      fmt::format_to(std::back_inserter(buffer), "{}, ", first);
+      println_(ctx, buffer, std::forward<Args>(args)...);
    }
 
-   void clearLocation() const
+   template <typename T>
+   void println_(context& ctx, buffer_t& buffer, T&& first) const
    {
-      std::memset((void*)&m_storage->ctx_.line, 0,
-                  context::GetNoTextAndLevelLength(m_storage->ctx_));
-      m_storage->buffer_.clear();
+      fmt::format_to(std::back_inserter(buffer), "{}", first);
+      ctx.text = StringView{buffer.data(), buffer.size()};
+      log_it_(ctx);
+   }
+
+   static void init_context_(context& ctx, source_location const& location)
+   {
+      ctx.line           = location.line();
+      ctx.func_name      = location.function_name();
+      ctx.long_filename  = location.file_name();
+      ctx.short_filename = detail::GetShortName(ctx.long_filename);
    }
 
 private:
-   LogStoragePtr m_storage;
-   ConfigPtr     m_config;
+   Levels    m_level;
+   ConfigPtr m_config;
+};
+
+struct logger_helper
+{
+   explicit logger_helper(source_location const& source)
+     : source_(source), log_()
+   {
+   }
+
+   logger_helper() : source_(), log_() {}
+
+   template <typename... Args>
+   inline void trace(format_string_t<Args...> format, Args&&... args)
+   {
+      if (!should_log_()) return;
+      log_.set_level(kTrace);
+      log_.printf(source_, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline void debug(format_string_t<Args...> format, Args&&... args)
+   {
+      if (!should_log_()) return;
+      log_.set_level(kDebug);
+      log_.printf(source_, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline void info(format_string_t<Args...> format, Args&&... args)
+   {
+      if (!should_log_()) return;
+      log_.set_level(kInfo);
+      log_.printf(source_, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline void warn(format_string_t<Args...> format, Args&&... args)
+   {
+      if (!should_log_()) return;
+      log_.set_level(kWarn);
+      log_.printf(source_, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline void error(format_string_t<Args...> format, Args&&... args)
+   {
+      if (!should_log_()) return;
+      log_.set_level(kError);
+      log_.printf(source_, format, std::forward<Args>(args)...);
+   }
+
+   template <typename... Args>
+   inline void fatal(format_string_t<Args...> format, Args&&... args)
+   {
+      if (!should_log_()) return;
+      log_.set_level(kFatal);
+      log_.printf(source_, format, std::forward<Args>(args)...);
+   }
+
+private:
+   bool should_log_() { return source_.file_name() != nullptr; }
+
+   source_location source_;
+   Log             log_;
 };
 
 LBLOG_NAMESPACE_END
+
+// check micro
+#define ELG_CHECK(condition)                                                   \
+   elog::Check(condition,elog::source_location::current())
+
+#define ELG_ASSERT_IF(cond)                                                    \
+   elog::CheckIfFatal(!(cond), elog::source_location::current(), "assertion failed:\"" #cond "\"")
+
+#define ELG_CHECK_NOTNULL(ptr) (ELG_ASSERT_IF(ptr != nullptr), ptr)
+
+#define ELG_CHECK_EQ(v1, v2) ELG_ASSERT_IF(v1 == v2)
+
+#define ELG_CHECK_NE(v1, v2) ELG_ASSERT_IF(v1 != v2)
+
+#define ELG_CHECK_LE(v1, v2) ELG_ASSERT_IF(v1 <= v2)
+
+#define ELG_CHECK_LT(v1, v2) ELG_ASSERT_IF(v1 < v2)
+
+#define ELG_CHECK_GE(v1, v2) ELG_ASSERT_IF(v1 >= v2)
+
+#define ELG_CHECK_GT(v1, v2) ELG_ASSERT_IF(v1 > v2)

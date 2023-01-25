@@ -49,8 +49,6 @@ void FileAppender::init(const char* filename)
               filename, errorInfo);
       throw std::runtime_error("panic:FILE* is null");
    }
-   LB_TRACE_("设置 FILE* 缓冲区大小为{}", sizeof(m_buffer));
-   platform::CallSetBuffer(m_file, m_buffer, sizeof(m_buffer));
 }
 #pragma warning(default:4996)
 
