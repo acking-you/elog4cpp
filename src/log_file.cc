@@ -6,7 +6,6 @@
 #include <memory>
 
 #include "elog/logger_util.h"
-#include "elog/trace.impl.h"
 
 using namespace elog::detail;
 
@@ -16,7 +15,7 @@ LogFile::LogFile(const char* basename, int rollSize, bool threadSafe,
     m_rollSize(rollSize),
     m_flushInterval(flushInterval),
     m_checkEveryN(checkEveryN),
-    m_mtx(threadSafe ? elog::make_unique<std::mutex>() : nullptr)
+    m_mtx(threadSafe ? new std::mutex() : nullptr)
 {
    rollFile();
 }
@@ -54,8 +53,8 @@ void LogFile::append_unlocked(const char* line, int len)
    m_file->append(line, len);
    if (m_file->writtenBytes() > m_rollSize)
    {   // 单个文件超出规定大小，滚动日志（重新创建新文件写入
-      LB_TRACE_("文件大小超过限定大小 {:d}kb，开始创建新文件进行写入",
-                m_rollSize / 1024);
+      //      LB_TRACE_("文件大小超过限定大小 {:d}kb，开始创建新文件进行写入",
+      //                m_rollSize / 1024);
       rollFile();
       m_file->resetWritten();
    }
@@ -64,7 +63,7 @@ void LogFile::append_unlocked(const char* line, int len)
       ++m_count;
       if (m_count >= m_checkEveryN)
       {   // 开始检查
-         LB_TRACE_("开始检查flushInterval和curPeriod");
+          //         LB_TRACE_("开始检查flushInterval和curPeriod");
          m_count          = 0;
          time_t now       = ::time(nullptr);
          time_t curPeriod = now / kRollPerSeconds * kRollPerSeconds;
@@ -89,12 +88,17 @@ void LogFile::rollFile(const time_t* cache_now)
 
    if (now > m_lastRoll)
    {
-      LB_TRACE_("开始执行roll操作，filename：{}", filename);
+      //      LB_TRACE_("开始执行roll操作，filename：{}", filename);
 
       m_lastRoll   = now;
       m_lastFlush  = now;
       m_lastPeriod = start;
-      m_file = elog::make_unique<FileAppender>(filename);   // 创建新的文件
+#if __cplusplus < 201403L
+      m_file = std::unique_ptr<FileAppender>(
+        new FileAppender(filename));   // 创建新的文件
+#else
+      m_file = std::make_unique<FileAppender>(filename);   // 创建新的文件
+#endif
    }
 }
 #ifdef _MSC_VER

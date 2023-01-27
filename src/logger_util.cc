@@ -11,7 +11,8 @@
 
 #include "elog/processinfo.h"
 
-USING_LBLOG
+using namespace elog;
+
 constexpr int kSumLength = 1024;
 
 thread_local char           t_filename[kSumLength];
@@ -26,7 +27,7 @@ using namespace std;
 
 const char* Util::getCurDateTime(bool isTime, time_t* now)
 {
-   time_t timer = time(0);
+   time_t timer = time(nullptr);
    if (now != nullptr)
    {   // to reduce system call
       *now = timer;
@@ -35,42 +36,53 @@ const char* Util::getCurDateTime(bool isTime, time_t* now)
    if (t_lastSecond != timer)
    {
       t_lastSecond = timer;
-      platform::GetLocalTime_r(&timer, &t_tm);
+#if defined(_WIN32)
+      ::localtime_s(&t_tm, &timer);
+#else
+      ::localtime_r(&timer,&t_tm);
+#endif
    }
    // to subtract gmtime and localtime for obtain timezone
    if (t_timezone == -1)
    {
-      time_t time_utc = mktime(platform::GetGmTime_r(&timer, &t_gmtm));
-      t_timezone      = static_cast<int>(timer - time_utc) / 3600;
+#if defined(_WIN32)
+      ::gmtime_s(&t_gmtm, &timer);
+      time_t gm_time = std::mktime(&t_gmtm);
+#else
+      time_t gm_time = std::mktime(::gmtime_r(&timer, &t_gmtm));
+#endif
+      t_timezone = static_cast<int>(timer - gm_time) / 3600;
    }
    int len;
    if (isTime)
    {
-      len =
-        snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d %02d:%02d:%02d +%02d",
-                 t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday,
-                 t_tm.tm_hour, t_tm.tm_min, t_tm.tm_sec, t_timezone);
+      len = std::snprintf(t_time, sizeof(t_time),
+                          "%4d-%02d-%02d %02d:%02d:%02d +%02d",
+                          t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday,
+                          t_tm.tm_hour, t_tm.tm_min, t_tm.tm_sec, t_timezone);
       assert(len == 23);
    }
    else
    {
-      len = snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d",
-                     t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday);
+      len = std::snprintf(t_time, sizeof(t_time), "%4d-%02d-%02d",
+                          t_tm.tm_year + 1900, t_tm.tm_mon + 1, t_tm.tm_mday);
       assert(len == 10);
    }
+   (void)len;
    return t_time;
 }
 
 const char* Util::getErrorInfo(int error_code)
 {
-   return platform::GetStrError_r(error_code, t_errnobuf, sizeof(t_errnobuf));
+#if defined(_WIN32)
+   ::strerror_s(t_errnobuf, sizeof(t_errnobuf), error_code);
+#else
+   auto* p = ::strerror_r(error_code, t_errnobuf, sizeof(t_errnobuf));
+   (void)p;
+#endif
+   return t_errnobuf;
 }
 
-//disable waring in msvc
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4996)
-#endif
 // Don't have same name If it is less than one
 // second since the last refresh time
 const char* Util::getLogFileName(const char* basename, time_t& now)
@@ -79,12 +91,21 @@ const char* Util::getLogFileName(const char* basename, time_t& now)
    assert(baseSz < kSumLength - 200);
    // prevent strcpy no copy if `basename == t_filename[0:baseSz]`
    t_filename[baseSz] = '\0';
-   auto* filename     = std::strncpy(t_filename, basename, baseSz);
+   char* filename     = t_filename;
+#if defined(_WIN32)
+   ::strncpy_s(t_filename, basename, baseSz);
+#else
+   ::strncpy(t_filename, basename, baseSz);
+#endif
    assert(filename && filename[baseSz] == '\0');
 
    size_t  remainLen = kSumLength - baseSz;
    std::tm tm{};
-   platform::GetLocalTime_r(&now, &tm);
+#if defined(_WIN32)
+   ::localtime_s(&tm, &now);
+#else
+   ::localtime_r(&now, &tm);
+#endif
    size_t tsz =
      std::strftime(filename + baseSz, remainLen, ".%Y%m%d-%H%M%S.", &tm);
    size_t nsz = std::snprintf(filename + baseSz + tsz, remainLen - tsz,
@@ -93,6 +114,3 @@ const char* Util::getLogFileName(const char* basename, time_t& now)
    assert(filename[baseSz + tsz + nsz] == '\0');
    return filename;
 }
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif

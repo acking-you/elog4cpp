@@ -8,15 +8,16 @@
     "flag:用于开启日志对应输出的数据内容，有date,time,line,file,short_file,tid,func七种，可以通过+号来同时开启，当然也可直接使用default，它表示除tid以外的所有选项",
     "level:用于规定全局的最低输出等级，有trace,debug,info,warn,error,fatal,默认使用debug",
     "formatter:用于规定全局的日志格式化方式，有default,colorful,custom这三种，默认采取default，如果使用custom，则需要添加fmt_string",
-    "fmt_string:仅当formatter选择custom后用于设定自定义的formatter，对应的数据表示如下：%T:time,%t:tid,%F:filepath,%f:func,%e:error info,%L:long levelText,%l:short levelText,%v:message ,%c color start %C color end"
+    "fmt_string:仅当formatter选择custom后用于设定自定义的formatter，对应的数据表示如下：%n:name %T:time,%t:tid,%F:filepath,%f:func,%e:error info,%L:long levelText,%l:short levelText,%v:message ,%c color start %C color end"
   ],
   "elog": {
-    "name": "test",
+    "name": "elog4cpp",
     "flag": "default+tid",
     "flush_interval": 3,
-    "formatter": "default",
+    "formatter": "colorful",
+    "fmt_string": "[%n][%T][%L][%t][%F][%f]: %v",
     "level": "debug",
-    "out_console": false,
+    "out_console": true,
     "out_file": "../../log/",
     "roll_size": 20
   }

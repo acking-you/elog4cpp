@@ -2,6 +2,10 @@
 
 #include <cassert>
 
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+
 USING_LBLOG
 USING_LBLOG_DETAIL
 
@@ -36,11 +40,10 @@ void LoggerImpl::waitForDone()
 void LoggerImpl::LogFile(Config* config, context const& ctx)
 {
    assert(config != nullptr);
-
-   auto buffer = buffer_t{};
-   config->log_formatter(config, ctx, buffer, Appenders::kFile);
-   // 将数据写入Async缓冲区
-   m_logging->append(buffer.data(), static_cast<int>(buffer.size()));
+   inner_message msg;
+   msg.config = config;
+   msg.source = inner_logsource::fromContext(ctx);
+   m_logging->pushMsg(msg);
 }
 
 void LoggerImpl::LogConsole(Config* config, const context& ctx)
@@ -49,13 +52,25 @@ void LoggerImpl::LogConsole(Config* config, const context& ctx)
 
    auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kConsole);
-   buffer.push_back('\0');   // with c-style
 
    {
       std::lock_guard<std::mutex> lk(m_mutex);   // Lock the I/O device
-      platform::CallFPutsUnlocked(buffer.data(), stdout);
+#if defined(_WIN32)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
+      DWORD dwBytesWritten{};
+      ::WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer.data(),
+                      buffer.size(), &dwBytesWritten, nullptr);
+      assert(dwBytesWritten == buffer.size());
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+#else
+      fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
+#endif
    }
-   std::fflush(stdout);
 }
 
 void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
@@ -64,9 +79,21 @@ void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
 
    auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kConsole);
-   buffer.push_back('\0');   // with c-style
-   platform::CallFPutsUnlocked(buffer.data(), stdout);
-   std::fflush(stdout);
+#if defined(_WIN32)
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
+   DWORD dwBytesWritten{};
+   ::WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer.data(),
+                   buffer.size(), &dwBytesWritten, nullptr);
+   assert(dwBytesWritten == buffer.size());
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+#else
+   fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
+#endif
 }
 
 void LoggerImpl::DoInternalLog(const context& ctx)

@@ -2,7 +2,9 @@
 
 #include "elog/config.h"
 #include "elog/logger_util.h"
+#include "elog/micros.h"
 #include "elog/processinfo.h"
+#include "elog/switch_helper.h"
 #include "fmt/color.h"
 
 LBLOG_NAMESPACE_BEGIN
@@ -10,10 +12,8 @@ namespace {
 
 #define LEVEL_COUNT static_cast<int>(Levels::kLevelCount)
 
-thread_local char t_filename_buf[1024];
-
-const char* s_level_text[LEVEL_COUNT + 1] = {
-  "[TRACE]", "[DEBUG]", "[INFO]", "[WARN]", "[ERROR]", "[FATAL]", "[UNKOW]"};
+const char* s_level_text[LEVEL_COUNT + 1]  = {"TRACE", "DEBUG", "INFO", "WARN",
+                                              "ERROR", "FATAL", "UNKOW"};
 const char* s_simple_text[LEVEL_COUNT + 1] = {"TRC", "DEB", "INF", "WAR",
                                               "ERR", "FAL", "UNK"};
 
@@ -97,7 +97,7 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
                      Util::getCurDateTime(IS_SET(logFlag, Flags::kTime)));
    }
    // log level
-   fmt::format_to(fmt::appender(buffer), "{}", levelText);
+   fmt::format_to(fmt::appender(buffer), "[{}]", levelText);
 
    if (IS_SET(logFlag, Flags::kThreadId))
    {   // log thread id
@@ -175,11 +175,11 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    if (outType == Appenders::kConsole)   // colorful
    {
       fmt::format_to(std::back_inserter(buffer),
-                     fg(GET_COLOR_BY_LEVEL(ctx.level)), "{}", levelText);
+                     fg(GET_COLOR_BY_LEVEL(ctx.level)), "[{}]", levelText);
    }
    else
    {   // nocolor
-      fmt::format_to(std::back_inserter(buffer), "{}", levelText);
+      fmt::format_to(std::back_inserter(buffer), "[{}]", levelText);
    }
    if (IS_SET(logFlag, Flags::kThreadId))
    {   // log thread id
@@ -312,7 +312,7 @@ void customStringFormatter(const StringView& format_str, Config* config,
          }
          case "%t"_i: {
             // TODO to use config?
-            platform::TidType tid = ProcessInfo::GetTid();
+            elog::pid_t tid = ProcessInfo::GetTid();
             outputBuffer.formatTo("{:d}", tid);
             break;
          }

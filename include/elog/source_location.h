@@ -1,14 +1,12 @@
 #pragma once
 #include <cstdint>
 
-#include "micros.h"
-
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4067)
 #endif
 
-LBLOG_NAMESPACE_BEGIN
+namespace elog {
 struct source_location
 {
 public:
@@ -79,7 +77,7 @@ private:
    const std::uint_least32_t lineNumber;
    const std::uint_least32_t columnOffset;
 };
-LBLOG_NAMESPACE_END
+}   // namespace elog
 
 #ifdef _MSC_VER
 #pragma warning(pop)

@@ -1,10 +1,11 @@
 #pragma once
-#include "systemcall_wrapper.h"
 
-LBLOG_NAMESPACE_BEGIN
+namespace elog {
+using tid_t = unsigned int;
+using pid_t = unsigned int;
 namespace ProcessInfo {
-platform::PidType GetPid();
-platform::TidType GetTid();
+pid_t GetPid();
+tid_t GetTid();
 const char*       GetHostname();
 }   // namespace ProcessInfo
-LBLOG_NAMESPACE_END
+}

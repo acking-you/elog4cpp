@@ -4,8 +4,7 @@
 #pragma once
 #include "formatter.h"
 
-LBLOG_NAMESPACE_BEGIN
-
+namespace elog {
 struct Config
 {
    Flags       log_flag  = Flags::kStdFlags;
@@ -20,11 +19,11 @@ struct Config
 
    auto setLevel(Levels level) -> Config&;
 
-   auto setBefore(callback_t const&function) -> Config&;
+   auto setBefore(callback_t const& function) -> Config&;
 
-   auto setAfter(callback_t const&function) -> Config&;
+   auto setAfter(callback_t const& function) -> Config&;
 
-   auto setFormatter(formatter_t const&formatter) -> Config&;
+   auto setFormatter(formatter_t const& formatter) -> Config&;
 
    [[nodiscard]] auto level() const -> Levels { return log_level; }
 };
@@ -50,4 +49,4 @@ struct GlobalConfig : Config
    auto loadFromJSON(const char* filename) -> GlobalConfig&;
 };
 
-LBLOG_NAMESPACE_END
+}   // namespace elog

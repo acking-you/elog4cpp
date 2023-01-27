@@ -1,6 +1,5 @@
 #pragma once
-#include "micros.h"
-LBLOG_NAMESPACE_BEGIN
+namespace elog {
 class noncopyable
 {
 public:
@@ -11,4 +10,4 @@ protected:
    noncopyable()  = default;
    ~noncopyable() = default;
 };
-LBLOG_NAMESPACE_END
+}   // namespace elog

@@ -5,8 +5,8 @@
 
 #include <cstdio>
 
+#include "micros.h"
 #include "noncopyable.h"
-#include "string_view.h"
 
 LBLOG_NAMESPACE_BEGIN
 namespace detail {
@@ -18,7 +18,7 @@ public:
    ~FileAppender();
    void   append(const char* line, size_t len);
    void   flush();
-   size_t writtenBytes() const { return m_writenBytes; }
+   [[nodiscard]] size_t writtenBytes() const { return m_writenBytes; }
    void   resetWritten() { m_writenBytes = 0; }
 
 private:

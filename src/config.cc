@@ -8,7 +8,9 @@
 #include <iostream>
 #include <utility>
 
-USING_LBLOG
+#include "elog/switch_helper.h"
+
+using namespace elog;
 
 auto GlobalConfig::Get() -> GlobalConfig&
 {

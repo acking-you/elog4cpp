@@ -3,7 +3,8 @@
 
 #include "async_logging.h"
 #include "config.h"
-#include "processinfo.h"
+#include "context.h"
+#include "fmt/ranges.h"
 #include "source_location.h"
 
 LBLOG_NAMESPACE_BEGIN
@@ -452,7 +453,7 @@ private:
    }
 
 private:
-   Levels    m_level;
+   Levels    m_level{};
    ConfigPtr m_config;
 };
 
