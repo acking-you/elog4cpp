@@ -115,7 +115,7 @@ int main(){
 
 将上面的代码做如下配置，并输出：
 >
-update：由于为了适应双缓冲异步输出的后台服务，对回调函数的接口进行了更改，下面的使用方式已经不再使用，具体使用方式请看 [test/main.cc](./tests/test_config.cc)
+update：由于为了适应双缓冲异步输出的后台服务，对回调函数的接口进行了更改，下面的使用方式已经不再使用，具体使用方式请看 [test/main.cc](./tests/test_config_micros.cc)
 中的 `test_multithreadAndProcess` 函数。
 
 ```cpp

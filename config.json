@@ -14,10 +14,9 @@
     "name": "elog4cpp",
     "flag": "default+tid",
     "flush_interval": 3,
-    "formatter": "colorful",
-    "fmt_string": "[%n][%T][%L][%t][%F][%f]: %v",
+    "formatter": "default",
     "level": "debug",
-    "out_console": true,
+    "out_console": false,
     "out_file": "../../log/",
     "roll_size": 20
   }

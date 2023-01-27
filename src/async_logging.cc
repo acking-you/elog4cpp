@@ -19,6 +19,7 @@ inner_logsource inner_logsource::fromContext(const context& ctx)
 {
    inner_logsource source;
    source.line           = ctx.line;
+   source.tid            = ctx.tid;
    source.level          = ctx.level;
    source.func_name      = ctx.func_name;
    source.short_filename = ctx.short_filename;
@@ -30,6 +31,7 @@ elog::context inner_logsource::toContext() const
 {
    context ctx;
    ctx.line           = line;
+   ctx.tid            = tid;
    ctx.level          = level;
    ctx.func_name      = func_name;
    ctx.short_filename = short_filename;

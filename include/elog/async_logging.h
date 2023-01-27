@@ -25,15 +25,16 @@ enum { kSmallBuffer = 4096, kLargeBuffer = 65536 };
 
 struct inner_logsource
 {
-   int         level{};
-   int         line{};
+   int          level{};
+   unsigned int tid{};
+   int          line{};
    const char* short_filename{};
    const char* long_filename{};
    const char* func_name{};
    std::string text;
 
    static inner_logsource fromContext(const context& ctx);
-   context                toContext() const;
+   [[nodiscard]] context  toContext() const;
 };
 
 struct inner_message

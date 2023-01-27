@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include "elog/processinfo.h"
+
 #if defined(_WIN32)
 #include <Windows.h>
 #endif
@@ -56,19 +58,9 @@ void LoggerImpl::LogConsole(Config* config, const context& ctx)
    {
       std::lock_guard<std::mutex> lk(m_mutex);   // Lock the I/O device
 #if defined(_WIN32)
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4244)
-#endif
-      DWORD dwBytesWritten{};
-      ::WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer.data(),
-                      buffer.size(), &dwBytesWritten, nullptr);
-      assert(dwBytesWritten == buffer.size());
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+      ::fwrite(buffer.data(), 1, buffer.size(), stdout);
 #else
-      fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
+      ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
 #endif
    }
 }
@@ -80,19 +72,9 @@ void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
    auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kConsole);
 #if defined(_WIN32)
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4244)
-#endif
-   DWORD dwBytesWritten{};
-   ::WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE), buffer.data(),
-                   buffer.size(), &dwBytesWritten, nullptr);
-   assert(dwBytesWritten == buffer.size());
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+   ::fwrite(buffer.data(), 1, buffer.size(), stdout);
 #else
-   fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
+   ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
 #endif
 }
 
@@ -126,6 +108,14 @@ Log& Log::instance()
 {
    thread_local Log t_log;
    return t_log;
+}
+
+void Log::log_it_(context& ctx) const
+{
+   ctx.level = m_level;
+   ctx.tid   = elog::ProcessInfo::GetTid();
+   detail::LoggerImpl::GetInstance().DoConfigLog(
+     m_config ? m_config.get() : &GlobalConfig::Get(), ctx);
 }
 
 logger_helper elog::Check(bool cond, source_location const& location)

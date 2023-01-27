@@ -1,4 +1,4 @@
-#include<gtest/gtest.h>
+#include<doctest/doctest.h>
 #include <memory>
 #include "bench_interface.h"
 
@@ -17,7 +17,7 @@ before_hook s_h;
 #pragma warning(disable:4244)
 #endif
 
-TEST(bench, bench_start)
+TEST_CASE("bench start")
 {
    one_thread_sync(1e5, 1);
    one_thread_sync_third_part(1e5, 1);

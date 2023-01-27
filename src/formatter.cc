@@ -3,7 +3,6 @@
 #include "elog/config.h"
 #include "elog/logger_util.h"
 #include "elog/micros.h"
-#include "elog/processinfo.h"
 #include "elog/switch_helper.h"
 #include "fmt/color.h"
 
@@ -74,7 +73,6 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
      trigger_helper(&t_outputBuffer, &config->log_before, &config->log_after);
 
    // prepare data
-   auto  tid       = ProcessInfo::GetTid();
    auto* levelText = GET_LEVEL_TEXT(ctx.level);
    auto* funcName =
      IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
@@ -101,7 +99,7 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
 
    if (IS_SET(logFlag, Flags::kThreadId))
    {   // log thread id
-      fmt::format_to(fmt::appender(buffer), "[tid:{:d}]", tid);
+      fmt::format_to(fmt::appender(buffer), "[tid:{:d}]", ctx.tid);
    }
    if (filename)
    {
@@ -140,7 +138,6 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
      trigger_helper(&t_outputBuffer, &config->log_before, &config->log_after);
 
    // prepare data
-   auto  tid       = ProcessInfo::GetTid();
    auto* levelText = GET_LEVEL_TEXT(ctx.level);
    auto* funcName =
      IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
@@ -183,7 +180,7 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    }
    if (IS_SET(logFlag, Flags::kThreadId))
    {   // log thread id
-      fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", tid);
+      fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", ctx.tid);
    }
    if (filename)
    {
@@ -259,7 +256,7 @@ void formatter::jsonFormatter(Config* config, context const& ctx,
    if (levelText) { t_outputBuffer.formatTo(R"(, "level":"{}")", levelText); }
    if (IS_SET(config->log_flag, Flags::kThreadId))
    {
-      t_outputBuffer.formatTo(R"(, "tid":"{:d}")", ProcessInfo::GetTid());
+      t_outputBuffer.formatTo(R"(, "tid":"{:d}")", ctx.tid);
    }
    if (filename)
    {
@@ -311,9 +308,7 @@ void customStringFormatter(const StringView& format_str, Config* config,
             break;
          }
          case "%t"_i: {
-            // TODO to use config?
-            elog::pid_t tid = ProcessInfo::GetTid();
-            outputBuffer.formatTo("{:d}", tid);
+            outputBuffer.formatTo("{:d}", ctx.tid);
             break;
          }
          case "%F"_i: {

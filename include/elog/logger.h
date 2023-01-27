@@ -422,12 +422,7 @@ public:
 private:
    static Log& instance();
 
-   void log_it_(context& ctx) const
-   {
-      ctx.level = m_level;
-      detail::LoggerImpl::GetInstance().DoConfigLog(
-        m_config ? m_config.get() : &GlobalConfig::Get(), ctx);
-   }
+   void log_it_(context& ctx) const;
 
    template <typename T, typename... Args>
    void println_(context& ctx, buffer_t& buffer, T&& first, Args&&... args) const

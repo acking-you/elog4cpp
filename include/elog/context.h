@@ -9,6 +9,7 @@ struct context
 {
    // 用于传递每次输出内容的上下文
    int                 level;
+   unsigned int        tid;
    int                 line{};
    const char*         short_filename{};
    const char*         long_filename{};
