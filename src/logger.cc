@@ -63,6 +63,7 @@ void LoggerImpl::LogConsole(Config* config, const context& ctx)
       ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
 #endif
    }
+   std::fflush(stdout);
 }
 
 void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
@@ -76,6 +77,7 @@ void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
 #else
    ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
 #endif
+   std::fflush(stdout);
 }
 
 void LoggerImpl::DoInternalLog(const context& ctx)
