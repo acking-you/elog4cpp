@@ -98,9 +98,9 @@ void LoggerImpl::DoConfigLog(Config* config, const context& ctx)
    if (GLOB_CONFIG.log_console) LogConsole(config, ctx);
 
    if (ctx.level == static_cast<int>(Levels::kFatal))
-   {                           // 若为fatal则发送abort信号退出进程
-      m_logging->waitDone();   // 等待数据成功刷盘
-      abort();
+   {
+      waitForDone();   // 等待刷盘落地
+      throw std::runtime_error("fatal error occurred");
    }
 }
 

@@ -11,7 +11,6 @@ else()
     message(STATUS "Using C++17")
     set(CMAKE_CXX_STANDARD 17)
 endif()
-
 add_subdirectory(dependencies/fmt EXCLUDE_FROM_ALL)
 add_subdirectory(dependencies/ejson4cpp EXCLUDE_FROM_ALL)
 

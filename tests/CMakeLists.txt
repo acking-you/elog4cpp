@@ -1,4 +1,3 @@
-# copied from https://github.com/google/googletest/blob/main/googletest/README.md
 include(FetchContent)
 
 FetchContent_Declare(
@@ -44,6 +43,5 @@ add_executable(benchtest ${BENCH_FILES})
 target_link_libraries(benchtest PRIVATE doctest_with_main elog nanobench spdlog_header_only)
 add_test(NAME ${PROJECT_NAME}-benchtest COMMAND benchtest)
 
-
 add_executable(perf perf.cc)
-target_link_libraries(perf elog)
+target_link_libraries(perf elog spdlog_header_only)

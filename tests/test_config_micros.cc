@@ -1,6 +1,8 @@
 #include <chrono>
 #include <vector>
 
+#define ENABLE_ELG_CHECK
+#define ENABLE_ELG_LOG
 #include "elog/logger.h"
 #include "doctest/doctest.h"
 #include "nanobench.h"
@@ -124,7 +126,18 @@ TEST_CASE("test config")
    test_and_bench_CHECK();
 }
 
-TEST_CASE("test micros")
+TEST_CASE("test log micros")
+{
+   GlobalConfig::Get().setLevel(elog::kTrace);
+   ELG_TRACE("hello {}", "world");
+   ELG_DEBUG("hello {}", "world");
+   ELG_INFO("hello {}", "world");
+   ELG_WARN("hello {}", "world");
+   ELG_ERROR("hello {}", "world");
+   CHECK_THROWS_AS(ELG_FATAL("hello {}", "world");, std::runtime_error);
+}
+
+TEST_CASE("test check micros")
 {
    int a = 1, b = 1;
    ELG_CHECK_EQ(a, b);

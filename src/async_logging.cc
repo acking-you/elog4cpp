@@ -70,18 +70,14 @@ AsyncLogging::AsyncLogging(const char* basename, int rollSize,
 
 AsyncLogging::~AsyncLogging()
 {
+   if (m_done.load(std::memory_order::memory_order_acquire)) { return; }
    do_done();
 }
 
 // 如果发生异常，则需要维护最后的资源安全退出
 void AsyncLogging::do_done()
 {
-   if (m_done)
-   {
-      return;
-   }
-
-   m_done = true;
+   m_done.store(true, std::memory_order::memory_order_release);
 
    m_cv.notify_one();   // 由于只控制一个线程
 
@@ -91,7 +87,11 @@ void AsyncLogging::do_done()
    }
 }
 
-void AsyncLogging::waitDone() { do_done(); }
+void AsyncLogging::waitDone()
+{
+   if (m_done.load(std::memory_order::memory_order_acquire)) { return; }
+   do_done();
+}
 
 // 双缓冲关键代码
 void AsyncLogging::pushMsg(inner_message const& msg)
@@ -143,7 +143,7 @@ void AsyncLogging::thread_worker()
       BufferVector buffersToWrite;
       buffersToWrite.reserve(16);   // 提前预分配
 
-      while (!m_done)
+      while (!m_done.load(std::memory_order::memory_order_acquire))
       {
          {
             std::unique_lock<std::mutex> lock(m_mtx);

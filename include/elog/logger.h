@@ -272,151 +272,163 @@ public:
    template <typename... Args>
    inline static void trace(format_string_t<Args...> format, Args&&... args)
    {
-      Get(kTrace).printf(format, std::forward<Args>(args)...);
+      if (should_log_(kTrace))
+         Get(kTrace).printf(format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void trace(source_location const&   loc,
                             format_string_t<Args...> format, Args&&... args)
    {
-      Get(kTrace).printf(loc, format, std::forward<Args>(args)...);
+      if (should_log_(kTrace))
+         Get(kTrace).printf(loc, format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void debug(format_string_t<Args...> format, Args&&... args)
    {
-      Get(kDebug).printf(format, std::forward<Args>(args)...);
+      if (should_log_(kDebug))
+         Get(kDebug).printf(format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void debug(source_location const&   loc,
                             format_string_t<Args...> format, Args&&... args)
    {
-      Get(kDebug).printf(loc, format, std::forward<Args>(args)...);
+      if (should_log_(kDebug))
+         Get(kDebug).printf(loc, format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void info(format_string_t<Args...> format, Args&&... args)
    {
-      Get(kInfo).printf(format, std::forward<Args>(args)...);
+      if (should_log_(kInfo))
+         Get(kInfo).printf(format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void info(source_location const&   loc,
                            format_string_t<Args...> format, Args&&... args)
    {
-      Get(kInfo).printf(loc, format, std::forward<Args>(args)...);
+      if (should_log_(kInfo))
+         Get(kInfo).printf(loc, format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void warn(format_string_t<Args...> format, Args&&... args)
    {
-      Get(kWarn).printf(format, std::forward<Args>(args)...);
+      if (should_log_(kWarn))
+         Get(kWarn).printf(format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void warn(source_location const&   loc,
                            format_string_t<Args...> format, Args&&... args)
    {
-      Get(kWarn).printf(loc, format, std::forward<Args>(args)...);
+      if (should_log_(kWarn))
+         Get(kWarn).printf(loc, format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void error(format_string_t<Args...> format, Args&&... args)
    {
-      Get(kError).printf(format, std::forward<Args>(args)...);
+      if (should_log_(kError))
+         Get(kError).printf(format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void error(source_location const&   loc,
                             format_string_t<Args...> format, Args&&... args)
    {
-      Get(kError).printf(loc, format, std::forward<Args>(args)...);
+      if (should_log_(kError))
+         Get(kError).printf(loc, format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void fatal(format_string_t<Args...> format, Args&&... args)
    {
-      Get(kFatal).printf(format, std::forward<Args>(args)...);
+      if (should_log_(kFatal))
+         Get(kFatal).printf(format, std::forward<Args>(args)...);
    }
 
    template <typename... Args>
    inline static void fatal(source_location const&   loc,
                             format_string_t<Args...> format, Args&&... args)
    {
-      Get(kFatal).printf(loc, format, std::forward<Args>(args)...);
+      if (should_log_(kFatal))
+         Get(kFatal).printf(loc, format, std::forward<Args>(args)...);
    }
 
    template <typename T>
    inline static void trace(T const& format)
    {
-      Get(kTrace).printf(format);
+      if (should_log_(kTrace)) Get(kTrace).printf(format);
    }
 
    template <typename T>
    inline static void trace(source_location const& loc, T const& format)
    {
-      Get(kTrace).printf(loc, format);
+      if (should_log_(kTrace)) Get(kTrace).printf(loc, format);
    }
 
    template <typename T>
    inline static void debug(T const& format)
    {
-      Get(kDebug).printf(format);
+      if (should_log_(kDebug)) Get(kDebug).printf(format);
    }
 
    template <typename T>
    inline static void debug(source_location const loc, T const& format)
    {
-      Get(kDebug).printf(loc, format);
+      if (should_log_(kDebug)) Get(kDebug).printf(loc, format);
    }
 
    template <typename T>
    inline static void info(T const& format)
    {
-      Get(kInfo).printf(format);
+      if (should_log_(kInfo)) Get(kInfo).printf(format);
    }
 
    template <typename T>
    inline static void info(source_location const& loc, T const& format)
    {
-      Get(kInfo).printf(loc, format);
+      if (should_log_(kInfo)) Get(kInfo).printf(loc, format);
    }
 
    template <typename T>
    inline static void warn(T const& format)
    {
-      Get(kWarn).printf(format);
+      if (should_log_(kWarn)) Get(kWarn).printf(format);
    }
 
    template <typename T>
    inline static void warn(source_location const& loc, T const& format)
    {
-      Get(kWarn).printf(loc, format);
+      if (should_log_(kWarn)) Get(kWarn).printf(loc, format);
    }
 
    template <typename T>
    inline static void error(T const& format)
    {
-      Get(kError).printf(format);
+      if (should_log_(kError)) Get(kError).printf(format);
    }
 
    template <typename T>
    inline static void error(source_location const& loc, T const& format)
    {
-      Get(kError).printf(loc, format);
+      if (should_log_(kError)) Get(kError).printf(loc, format);
    }
 
    template <typename T>
    inline static void fatal(T const& format)
    {
-      Get(kFatal).printf(format);
+      if (should_log_(kFatal)) Get(kFatal).printf(format);
    }
 
    template <typename T>
    inline static void fatal(source_location const& loc, T const& format)
    {
-      Get(kFatal).printf(loc, format);
+      if (should_log_(kFatal)) Get(kFatal).printf(loc, format);
    }
 
 private:
@@ -424,8 +436,14 @@ private:
 
    void log_it_(context& ctx) const;
 
+   static bool should_log_(Levels level)
+   {
+      return GlobalConfig::Get().level() <= level;
+   }
+
    template <typename T, typename... Args>
-   void println_(context& ctx, buffer_t& buffer, T&& first, Args&&... args) const
+   void println_(context& ctx, buffer_t& buffer, T&& first,
+                 Args&&... args) const
    {
       fmt::format_to(std::back_inserter(buffer), "{}, ", first);
       println_(ctx, buffer, std::forward<Args>(args)...);
@@ -518,6 +536,7 @@ private:
 
 LBLOG_NAMESPACE_END
 
+#ifdef ENABLE_ELG_CHECK
 // check micro
 #define ELG_CHECK(condition)                                                   \
    elog::Check(condition,elog::source_location::current())
@@ -538,3 +557,26 @@ LBLOG_NAMESPACE_END
 #define ELG_CHECK_GE(v1, v2) ELG_ASSERT_IF(v1 >= v2)
 
 #define ELG_CHECK_GT(v1, v2) ELG_ASSERT_IF(v1 > v2)
+
+#endif
+
+#ifdef ENABLE_ELG_LOG
+// log with position micro
+#define ELG_TRACE(fmt, ...)                                                    \
+   elog::Log::trace(elog::loc::current(), fmt, ##__VA_ARGS__)
+
+#define ELG_DEBUG(fmt, ...)                                                    \
+   elog::Log::debug(elog::loc::current(), fmt, ##__VA_ARGS__)
+
+#define ELG_INFO(fmt, ...)                                                     \
+   elog::Log::info(elog::loc::current(), fmt, ##__VA_ARGS__)
+
+#define ELG_WARN(fmt, ...)                                                     \
+   elog::Log::warn(elog::loc::current(), fmt, ##__VA_ARGS__)
+
+#define ELG_ERROR(fmt, ...)                                                    \
+   elog::Log::error(elog::loc::current(), fmt, ##__VA_ARGS__)
+
+#define ELG_FATAL(fmt, ...)                                                    \
+   elog::Log::fatal(elog::loc::current(), fmt, ##__VA_ARGS__)
+#endif
