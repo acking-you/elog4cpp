@@ -131,5 +131,5 @@ logger_helper elog::Check(bool cond, source_location const& location)
 void elog::CheckIfFatal(bool cond, source_location const& location,
                         const char* text)
 {
-   if (cond) { Check(false, location).fatal(text); }
+   if (!cond) { Check(true, location).fatal(text); }
 }

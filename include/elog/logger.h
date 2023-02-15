@@ -544,7 +544,7 @@ LBLOG_NAMESPACE_END
    elog::Check(condition,elog::source_location::current())
 
 #define ELG_ASSERT_IF(cond)                                                    \
-   elog::CheckIfFatal(!(cond), elog::source_location::current(), "assertion failed:\"" #cond "\"")
+   elog::CheckIfFatal((cond), elog::source_location::current(), "assertion failed:\"" #cond "\"")
 
 #define ELG_CHECK_NOTNULL(ptr) (ELG_ASSERT_IF(ptr != nullptr), ptr)
 
