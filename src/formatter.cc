@@ -353,7 +353,7 @@ void customStringFormatter(const StringView& format_str, Config* config,
             break;
          }
          case "%n"_i: {
-            outputBuffer.append(config->log_name);
+            if (config->log_name) outputBuffer.append(config->log_name);
             break;
          }
          case "%c"_i: {

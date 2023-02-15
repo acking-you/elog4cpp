@@ -112,6 +112,8 @@ Log& Log::instance()
    return t_log;
 }
 
+Log::~Log() { WaitForDone(); }
+
 void Log::log_it_(context& ctx) const
 {
    ctx.level = m_level;

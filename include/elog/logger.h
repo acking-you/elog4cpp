@@ -132,6 +132,8 @@ public:
    friend struct logger_helper;
    using ConfigPtr = std::unique_ptr<Config>;
 
+   ~Log();
+
    explicit Log(Levels level) : m_level(level) {}
 
    explicit Log(Levels level, ConfigPtr config)
