@@ -1,5 +1,6 @@
 #pragma once
 #include <sstream>
+#include <unordered_map>
 
 #include "async_logging.h"
 #include "config.h"
