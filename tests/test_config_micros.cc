@@ -84,6 +84,23 @@ void test_timer_callback_and_load_config()
    }
 }
 
+void test_localConfig()
+{
+   // register local config
+   auto config           = elog::make_unique<Config>();
+   config->log_before    = [](output_buf_t& out) { out.append("before"); };
+   config->log_after     = [](output_buf_t& out) { out.append("after"); };
+   config->log_flag      = kStdFlags + kThreadId;
+   config->log_name      = "test_local";
+   config->log_level     = kInfo;
+   config->log_formatter = formatter::colorfulFormatter;
+   Log::registerConfigByName("test_local", std::move(config));
+
+   // create Log by localConfig
+   auto log = Log(kInfo, "test_local");
+   for (int i = 0; i < 10; i++) log.println("hello world");
+}
+
 void test_console_json_config()
 {
    set_console_json_config();
@@ -112,18 +129,22 @@ void test_and_bench_CHECK()
      .doNotOptimizeAway(data);
 }
 
+TEST_CASE("bench CHECK_XXX"){
+   test_and_bench_CHECK();
+}
+
 TEST_CASE("test config")
 {
-   // test config with callbac
+   // test config with callback
    test_timer_callback_and_load_config();
+   //test local config
+   test_localConfig();
    // test json formatter
    test_console_json_config();
    // test custom formatter
    test_custom_config();
    // test colorful formatter
    test_console_colorful_config();
-   // test CHECK micro
-   test_and_bench_CHECK();
 }
 
 TEST_CASE("test log micros")

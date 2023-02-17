@@ -10,6 +10,7 @@
 LBLOG_NAMESPACE_BEGIN
 
 using std::string;
+using ConfigPtr = std::unique_ptr<Config>;
 
 namespace detail {
 class LoggerImpl : noncopyable
@@ -23,6 +24,15 @@ public:
    static LoggerImpl& GetInstance();
 
    void waitForDone();
+
+   /**
+    * Not thread-safe,please use this before all log printing starts
+    * @param name
+    * @param config
+    */
+   void registerConfig(StringView name, ConfigPtr config);
+
+   Config* getConfig(StringView name);
 
    void DoLog(context const& ctx);
 
@@ -42,8 +52,10 @@ private:
    void init_data();
 
 private:
-   std::unique_ptr<AsyncLogging> m_logging;
-   std::mutex                    m_mutex;   // locked console
+   std::unordered_map<std::string, ConfigPtr> m_localConfigFactory;
+   std::unique_ptr<AsyncLogging>              m_logging;
+   // locked console
+   std::mutex                                 m_mutex;
 };
 
 inline void DoLog(context& ctx)
@@ -124,33 +136,33 @@ using format_string_t = fmt::format_string<Args...>;
 using loc             = elog::source_location;
 
 // log by class
-class Log : noncopyable
+class Log
 {
    Log() = default;
 
 public:
    friend struct logger_helper;
-   using ConfigPtr = std::unique_ptr<Config>;
-
-   ~Log();
 
    explicit Log(Levels level) : m_level(level) {}
 
-   explicit Log(Levels level, ConfigPtr config)
-     : m_level(level), m_config(std::move(config))
+   explicit Log(Levels level, StringView config_name)
+     : m_level(level), m_config(getConfigByName(config_name))
    {
    }
 
-   Log(Log&& log) noexcept
-     : m_level(log.m_level), m_config(std::move(log.m_config))
+   /**
+    * Not thread-safe,please use this before all log printing starts
+    * @param name
+    * @param config
+    */
+   static void registerConfigByName(StringView name, ConfigPtr config)
    {
+      detail::LoggerImpl::GetInstance().registerConfig(name, std::move(config));
    }
 
-   Log& operator=(Log&& log) noexcept
+   static Config* getConfigByName(StringView name)
    {
-      this->m_level  = log.m_level;
-      this->m_config = std::move(log.m_config);
-      return *this;
+      return detail::LoggerImpl::GetInstance().getConfig(name);
    }
 
    void set_level(Levels level) { m_level = level; }
@@ -468,8 +480,8 @@ private:
    }
 
 private:
-   Levels    m_level{};
-   ConfigPtr m_config;
+   Levels  m_level{};
+   Config* m_config{};
 };
 
 struct logger_helper

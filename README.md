@@ -343,8 +343,8 @@ A local configuration means that a separate `Config` configuration can be used b
 
 The steps on how to use the local configuration are as follows.
 
-1. Create the `Config` structure and initialize the corresponding configuration.
-2. Create a `Log` object and pass in the current log output level and the `Config` pointer parameter. 3.
+1. Through `Log::registerConfigByName` into your custom `Config`.
+2. Create a `Log` using the configuration with the `Config` name you inject.
 3. Using the `Log` object, call its corresponding `println` and `printf` methods to print.
 
 The sample code is as follows.
@@ -367,7 +367,7 @@ void config_global()
 		});
 }
 
-std::unique_ptr<Config> make_config()
+void register_local_config()
 {
 	auto config = make_unique<Config>();
 	config->log_formatter = formatter::colorfulFormatter;
@@ -380,29 +380,30 @@ std::unique_ptr<Config> make_config()
 	config->log_after = [](output_buf_t& buf) {
 		buf.append("after");
 	};
-	return config;
+	// Register Config
+	Log::registerConfigByName("local_config",std::move(config));
 }
 
 int main()
 {
 	config_global();
+    register_local_config();
 	// Create Log object and set the corresponding Config and level
-	auto trace = Log(kTrace, make_config());
+	auto trace = Log(kTrace, "local_config");
 	trace.printf("hello {}", "world");
 	trace.println("hello", std::vector<int>{1, 2, 32});
 	//Change the log output level
 	trace.set_level(kDebug);
 	trace.printf("hello {}", "world");
 	trace.println("hello", std::vector<int>{1, 2, 32});
-	//move construct to new object
-	auto info = std::move(trace);
+	//Can be safely copied to continue to use
+	auto info = trace;
 	info.set_level(kInfo);
 	info.printf("hello {}", "world");
 	info.println("hello", std::vector<int>{1, 2, 32});
 }
 ```
-
-Looking at the above source code, we see that the `Log` object is not replicable, it can only be moved and each `Log` object can only have an exclusive copy of `Config`, so it is completely thread-safe.
+> Note: Registering Config is not thread-safe, make sure you complete the registration of Config before logging out.
 
 ## Detailed interface description
 

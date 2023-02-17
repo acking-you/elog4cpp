@@ -39,6 +39,25 @@ void LoggerImpl::waitForDone()
    if (m_logging) m_logging->waitDone();
 }
 
+void LoggerImpl::registerConfig(StringView name, ConfigPtr config)
+{
+   auto key = std::string{name.data(), name.size()};
+   if (m_localConfigFactory.count(key))
+   {
+      fmt::print(
+        "don't supported update memory in LoggerImpl::registerConfig()");
+      return;
+   }
+   m_localConfigFactory[key] = std::move(config);
+}
+
+Config* LoggerImpl::getConfig(StringView name)
+{
+   auto item = m_localConfigFactory.find(std::string{name.data(), name.size()});
+   if (item == m_localConfigFactory.end()) { return nullptr; }
+   return item->second.get();
+}
+
 void LoggerImpl::LogFile(Config* config, context const& ctx)
 {
    assert(config != nullptr);
@@ -112,24 +131,23 @@ Log& Log::instance()
    return t_log;
 }
 
-Log::~Log() { WaitForDone(); }
 
 void Log::log_it_(context& ctx) const
 {
    ctx.level = m_level;
    ctx.tid   = elog::ProcessInfo::GetTid();
    detail::LoggerImpl::GetInstance().DoConfigLog(
-     m_config ? m_config.get() : &GlobalConfig::Get(), ctx);
+     m_config ? m_config : &GlobalConfig::Get(), ctx);
 }
 
 logger_helper elog::Check(bool cond, source_location const& location)
 {
-   if (cond) { return logger_helper{location}; }
+   if (!cond) { return logger_helper{location}; }
    return {};
 }
 
 void elog::CheckIfFatal(bool cond, source_location const& location,
                         const char* text)
 {
-   if (!cond) { Check(true, location).fatal(text); }
+   if (!cond) { Check(false, location).fatal(text); }
 }

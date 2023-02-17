@@ -361,9 +361,9 @@
 
 关于如何使用局部配置的步骤如下：
 
-1. 创建 `Config` 结构体并初始化对应的配置。
-2. 创建 `Log` 对象并传入当前 日志输出的等级以及 `Config` 指针参数。
-3.  使用 `Log` 对象，调用它对应的 `println` 和 `printf` 方法进行打印。
+1. 通过 `Log::registerConfigByName` 注入 `Config` 。
+2. 创建 `Log` 对象并传入当前日志输出的等级以及 `Config` 的名字。
+3. 使用 `Log` 对象，调用它对应的 `println` 和 `printf` 方法进行打印。
 
 示例代码如下：
 
@@ -385,7 +385,7 @@ void config_global()
 		});
 }
 
-std::unique_ptr<Config> make_config()
+void register_local_config()
 {
 	auto config = make_unique<Config>();
 	config->log_formatter = formatter::colorfulFormatter;
@@ -398,14 +398,16 @@ std::unique_ptr<Config> make_config()
 	config->log_after = [](output_buf_t& buf) {
 		buf.append("after");
 	};
-	return config;
+	// Register Config
+	Log::registerConfigByName("local_config",std::move(config));
 }
 
 int main()
 {
 	config_global();
-	//创建Log对象，并设置对应的Config和level
-	auto trace = Log(kTrace, make_config());
+	register_local_config();
+	//创建Log对象，设置level，并根据唯一的名字获取已经注册Config
+	auto trace = Log(kTrace, "local_config");
 	trace.printf("hello {}", "world");
 	trace.println("hello ", std::vector<int>{1, 2, 32});
 	//改变日志输出等级
@@ -419,8 +421,7 @@ int main()
 	info.println("hello ", std::vector<int>{1, 2, 32});
 }
 ```
-
-观察上述源码，我们发现 `Log` 对象是不可复制的，它只能移动，而且每个 `Log` 对象也只能独占一份 `Config` ，所以是完全线程安全的。
+> 注意：注册 Config 的操作不是线程安全的，请确保在进行日志输出之前完成Config的注册。
 
 ## 详细接口描述
 
@@ -494,7 +495,7 @@ using formatter_t = std::function<void(Config* config, context const& ctx, buffe
 * 判断断言，自定义打印。
    在传入判断条件后，会返回一个对象供你进行打印提示信息，可以选择不同的等级进行打印，如下面的例子是打印 `trace` 等级。
    ```cpp
-   ELG_CHECK(1 == 2).trace("1 != 2!");
+   ELG_CHECK(1 == 2).trace("1 != 2");
    ```
 
 ### 其他杂项
