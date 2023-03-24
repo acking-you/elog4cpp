@@ -7,6 +7,8 @@
 
 using namespace elog;
 
+TEST_SUITE_BEGIN("common test");
+
 TEST_CASE("test buffer_helper")
 {
    buffer_t buffer;
@@ -47,3 +49,5 @@ TEST_CASE("test const_util")
    REQUIRE_EQ(elog::detail::GetShortName("asfds/afsa/saf"), std::string("saf"));
    REQUIRE_EQ(elog::detail::GetShortName("asfds\\afsa\\sdf"), std::string("sdf"));
 }
+
+TEST_SUITE_END;

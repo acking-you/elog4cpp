@@ -1,9 +1,11 @@
 #pragma once
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
 #include <cassert>
 #include <functional>
 
 #include "any.h"
-#include "fmt/core.h"
 #include "string_view.h"
 
 namespace elog {

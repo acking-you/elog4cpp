@@ -129,6 +129,8 @@ void test_and_bench_CHECK()
      .doNotOptimizeAway(data);
 }
 
+TEST_SUITE_BEGIN("test config&micros");
+
 TEST_CASE("bench CHECK_XXX"){
    test_and_bench_CHECK();
 }
@@ -177,3 +179,5 @@ TEST_CASE("test check micros")
    ELG_CHECK_GT(a, b);
    delete p;
 }
+
+TEST_SUITE_END;
