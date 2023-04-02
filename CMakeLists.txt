@@ -19,16 +19,7 @@ else ()
     set(CMAKE_CXX_STANDARD 17)
 endif ()
 
-if (TARGET fmt)
-    message(WARNING "Target fmt already exists!")
-else ()
-    add_subdirectory(dependencies/fmt EXCLUDE_FROM_ALL)
-endif ()
-if (TARGET ejson)
-    message(WARNING "Target ejson already exists!")
-else ()
-    add_subdirectory(dependencies/ejson4cpp EXCLUDE_FROM_ALL)
-endif ()
+include(${PROJECT_SOURCE_DIR}/dependencies/fetch.cmake)
 
 option(ENABLE_TEST "Build unittest." OFF)
 
