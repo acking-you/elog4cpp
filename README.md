@@ -72,7 +72,7 @@ The following two methods are recommended for introduction.
     1. download the project source code via the git command
 
         ```shell
-        git clone https://github.com/ACking-you/elog4cpp.git
+        git clone https://github.com/ACking-you/elog4cpp.git --recursive
         ````
 
     2. Add the project to a subproject.
