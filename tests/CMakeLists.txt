@@ -1,20 +1,14 @@
-include(FetchContent)
-
-FetchContent_Declare(
+CPMAddPackage(
         doctest
         GIT_REPOSITORY https://github.com/doctest/doctest.git
         GIT_TAG v2.4.9
         GIT_SHALLOW TRUE
 )
-
-FetchContent_MakeAvailable(doctest)
-
-FetchContent_Declare(
+CPMAddPackage(
         nanobench
         GIT_REPOSITORY https://github.com/martinus/nanobench.git
         GIT_TAG v4.1.0
         GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(nanobench)
 
 add_definitions(-DPROJECT_ROOT="${PROJECT_SOURCE_DIR}/")
 
