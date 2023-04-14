@@ -59,7 +59,7 @@ The following two methods are recommended for introduction.
         FetchContent_Declare(
                 elog4cpp
                 GIT_REPOSITORY https://github.com/ACking-you/elog4cpp.git
-                GIT_TAG origin/master
+                GIT_TAG origin/fetch
                 GIT_SHALLOW TRUE)
         FetchContent_MakeAvailable(elog4cpp)
         ````
