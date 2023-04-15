@@ -11,6 +11,7 @@ struct context
    int                 level;
    unsigned int        tid;
    int                 line{};
+   int                 err{};
    const char*         short_filename{};
    const char*         long_filename{};
    const char*         func_name{};

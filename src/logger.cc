@@ -136,6 +136,7 @@ void Log::log_it_(context& ctx) const
 {
    ctx.level = m_level;
    ctx.tid   = elog::ProcessInfo::GetTid();
+   ctx.err   = errno;
    detail::LoggerImpl::GetInstance().DoConfigLog(
      m_config ? m_config : &GlobalConfig::Get(), ctx);
 }

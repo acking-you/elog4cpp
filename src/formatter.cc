@@ -115,10 +115,10 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
 
    fmt::string_view text{ctx.text.data(), ctx.text.size()};
 
-   if (ctx.level >= INT(Levels::kError) && errno<0)
+   if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
    {   // if level >= Error,get the error info
       fmt::format_to(fmt::appender(buffer), ": {} ^system error:{}", text,
-                     Util::getErrorInfo(errno));   // 打印系统错误提示信息
+                     Util::getErrorInfo(ctx.err));   // 打印系统错误提示信息
    }
    else
    {
@@ -196,12 +196,12 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    fmt::string_view text{ctx.text.data(), ctx.text.size()};
    if (outType == Appenders::kConsole)   // colorful
    {
-      if (ctx.level >= INT(Levels::kError) && errno<0)
+      if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
       {   // if level >= Error,get the error info
          fmt::format_to(std::back_inserter(buffer),
                         fg(GET_COLOR_BY_LEVEL(ctx.level)),
                         ": {} ^system error:{}", text,
-                        Util::getErrorInfo(errno));   // 打印系统错误提示信息
+                        Util::getErrorInfo(ctx.err));   // 打印系统错误提示信息
       }
       else
       {
@@ -212,11 +212,11 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    }
    else
    {   // nocolor
-      if (ctx.level >= INT(Levels::kError) && errno<0)
+      if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
       {   // if level >= Error,get the error info
-         fmt::format_to(std::back_inserter(buffer), ": {} `system error:{}",
+         fmt::format_to(std::back_inserter(buffer), ": {} ^system error:{}",
                         text,
-                        Util::getErrorInfo(errno));   // 打印提示信息
+                        Util::getErrorInfo(ctx.err));   // 打印提示信息
       }
       else
       {
@@ -334,8 +334,8 @@ void customStringFormatter(const StringView& format_str, Config* config,
             break;
          }
          case "%e"_i: {
-            if (ctx.level < INT(Levels::kError) || errno >= 0) break;
-            outputBuffer.append(Util::getErrorInfo(errno));
+            if (ctx.level < INT(Levels::kError) || ctx.err != 0) break;
+            outputBuffer.append(Util::getErrorInfo(ctx.err));
             break;
          }
          case "%L"_i: {
