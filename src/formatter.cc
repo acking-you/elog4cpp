@@ -116,9 +116,9 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
    fmt::string_view text{ctx.text.data(), ctx.text.size()};
 
    if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
-   {   // if level >= Error,get the error info
-      fmt::format_to(fmt::appender(buffer), ": {} ^system error:{}", text,
-                     Util::getErrorInfo(ctx.err));   // 打印系统错误提示信息
+   {                             // if level >= Error,get the error info
+      fmt::format_to(fmt::appender(buffer), ": {} ^system error code:{}", text,
+                     ctx.err);   // 打印系统错误提示信息
    }
    else
    {
@@ -200,8 +200,8 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
       {   // if level >= Error,get the error info
          fmt::format_to(std::back_inserter(buffer),
                         fg(GET_COLOR_BY_LEVEL(ctx.level)),
-                        ": {} ^system error:{}", text,
-                        Util::getErrorInfo(ctx.err));   // 打印系统错误提示信息
+                        ": {} ^system error code:{}", text,
+                        ctx.err);   // 打印系统错误提示信息
       }
       else
       {
@@ -214,9 +214,9 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    {   // nocolor
       if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
       {   // if level >= Error,get the error info
-         fmt::format_to(std::back_inserter(buffer), ": {} ^system error:{}",
-                        text,
-                        Util::getErrorInfo(ctx.err));   // 打印提示信息
+         fmt::format_to(std::back_inserter(buffer),
+                        ": {} ^system error code:{}", text,
+                        ctx.err);   // 打印提示信息
       }
       else
       {
@@ -334,7 +334,7 @@ void customStringFormatter(const StringView& format_str, Config* config,
             break;
          }
          case "%e"_i: {
-            if (ctx.level < INT(Levels::kError) || ctx.err != 0) break;
+            if (ctx.level < INT(Levels::kError) || ctx.err == 0) break;
             outputBuffer.append(Util::getErrorInfo(ctx.err));
             break;
          }
