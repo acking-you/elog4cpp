@@ -21,7 +21,7 @@ public:
      const char*          functionName = __builtin_FUNCTION(),
      const uint_least32_t lineNumber   = __builtin_LINE(),
      const uint_least32_t columnOffset = __builtin_COLUMN()) noexcept
-#elif not defined(__apple_build_version__) and defined(__clang__) and          \
+#elif  defined(__apple_build_version__) and defined(__clang__) and          \
   (__clang_major__ >= 9)
    static constexpr source_location current(
      const char*          fileName     = __builtin_FILE(),

@@ -12,8 +12,10 @@
 #if defined(_WIN32)
 #include <io.h>
 #else
-#include <string.h>
 #include <unistd.h>
+
+#include <cstring>
+#include <string>
 
 #endif
 
@@ -63,7 +65,7 @@ void FileAppender::init(const char* filename)
    }
    std::setvbuf(m_file, m_buffer, _IOFBF, sizeof(m_buffer));
 }
-#pragma warning(default:4996)
+#pragma warning(default : 4996)
 
 FileAppender::~FileAppender()
 {
@@ -105,7 +107,6 @@ void FileAppender::flush()
 {
    if (m_file)
    {
-      //      LB_TRACE_("底层flush执行");
       ::fflush(m_file);
    }
 }
@@ -115,12 +116,11 @@ size_t FileAppender::write(const char* line, size_t len)
    size_t sz = 0;
    if (m_file)
    {
-#if defined(_WIN32)
-      sz = ::fwrite(line, 1, len, m_file);
-#else
+#if defined(__linux__)
       sz = ::fwrite_unlocked(line, 1, len, m_file);
+#else
+      sz = ::fwrite(line, 1, len, m_file);
 #endif
    }
    return sz;
 }
-

@@ -8,3 +8,4 @@ log.txt
 .vs
 gh-md-toc.exe
 gh-md-toc
+auto_clean.sh

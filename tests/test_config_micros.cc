@@ -94,7 +94,7 @@ void test_localConfig()
    config->log_name      = "test_local";
    config->log_level     = kInfo;
    config->log_formatter = formatter::colorfulFormatter;
-   Log::registerConfigByName("test_local", std::move(config));
+   Log::RegisterConfig("test_local", std::move(config));
 
    // create Log by localConfig
    auto log = Log(kInfo, "test_local");

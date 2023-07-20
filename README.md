@@ -343,7 +343,7 @@ A local configuration means that a separate `Config` configuration can be used b
 
 The steps on how to use the local configuration are as follows.
 
-1. Through `Log::registerConfigByName` into your custom `Config`.
+1. Through `Log::RegisterConfig` into your custom `Config`.
 2. Create a `Log` using the configuration with the `Config` name you inject.
 3. Using the `Log` object, call its corresponding `println` and `printf` methods to print.
 
@@ -381,7 +381,7 @@ void register_local_config()
 		buf.append("after");
 	};
 	// Register Config
-	Log::registerConfigByName("local_config",std::move(config));
+	Log::RegisterConfig("local_config",std::move(config));
 }
 
 int main()

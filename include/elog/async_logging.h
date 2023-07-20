@@ -28,10 +28,10 @@ struct inner_logsource
    int          level{};
    unsigned int tid{};
    int          line{};
-   const char* short_filename{};
-   const char* long_filename{};
-   const char* func_name{};
-   std::string text;
+   const char*  short_filename{};
+   const char*  long_filename{};
+   const char*  func_name{};
+   std::string  text;
 
    static inner_logsource fromContext(const context& ctx);
    [[nodiscard]] context  toContext() const;

@@ -361,7 +361,7 @@
 
 关于如何使用局部配置的步骤如下：
 
-1. 通过 `Log::registerConfigByName` 注入 `Config` 。
+1. 通过 `Log::RegisterConfig` 注入 `Config` 。
 2. 创建 `Log` 对象并传入当前日志输出的等级以及 `Config` 的名字。
 3. 使用 `Log` 对象，调用它对应的 `println` 和 `printf` 方法进行打印。
 
@@ -399,7 +399,7 @@ void register_local_config()
 		buf.append("after");
 	};
 	// Register Config
-	Log::registerConfigByName("local_config",std::move(config));
+	Log::RegisterConfig("local_config",std::move(config));
 }
 
 int main()

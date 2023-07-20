@@ -12,7 +12,7 @@
   ],
   "elog": {
     "name": "elog4cpp",
-    "flag": "default+tid",
+    "flag": "default+tid+short_file+func",
     "flush_interval": 3,
     "formatter": "default",
     "level": "debug",

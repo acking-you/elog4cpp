@@ -1,5 +1,4 @@
 #include<doctest/doctest.h>
-#include <memory>
 #include "bench_interface.h"
 
 

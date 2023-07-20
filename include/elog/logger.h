@@ -47,7 +47,7 @@ public:
 
    void LogConsole(Config* config, context const& ctx);
 
-   static void LogConsoleUnsafe(Config* config, context const& ctx);
+   [[maybe_unused]] static void LogConsoleUnsafe(Config* config, context const& ctx);
 
 private:
    void init_data();
@@ -147,7 +147,7 @@ public:
    explicit Log(Levels level) : m_level(level) {}
 
    explicit Log(Levels level, StringView config_name)
-     : m_level(level), m_config(getConfigByName(config_name))
+     : m_level(level), m_config(GetConfig(config_name))
    {
    }
 
@@ -156,12 +156,12 @@ public:
     * @param name
     * @param config
     */
-   static void registerConfigByName(StringView name, ConfigPtr config)
+   static void RegisterConfig(StringView name, ConfigPtr config)
    {
       detail::LoggerImpl::GetInstance().registerConfig(name, std::move(config));
    }
 
-   static Config* getConfigByName(StringView name)
+   static Config* GetConfig(StringView name)
    {
       return detail::LoggerImpl::GetInstance().getConfig(name);
    }

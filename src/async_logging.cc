@@ -4,7 +4,6 @@
 
 #include "elog/async_logging.h"
 
-#include <array>
 #include <cassert>
 #include <chrono>
 #include <memory>
