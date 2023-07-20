@@ -77,7 +77,7 @@ const char* Util::getErrorInfo(int error_code)
 #if defined(_WIN32)
    ::strerror_s(t_errnobuf, sizeof(t_errnobuf), error_code);
 #else
-   auto* p = ::strerror_r(error_code, t_errnobuf, sizeof(t_errnobuf));
+   auto p = ::strerror_r(error_code, t_errnobuf, sizeof(t_errnobuf));
    (void)p;
 #endif
    return t_errnobuf;

@@ -76,7 +76,7 @@ void LoggerImpl::LogConsole(Config* config, const context& ctx)
 
    {
       std::lock_guard<std::mutex> lk(m_mutex);   // Lock the I/O device
-#if defined(_WIN32)
+#if !defined(__linux__)
       ::fwrite(buffer.data(), 1, buffer.size(), stdout);
 #else
       ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
@@ -91,7 +91,7 @@ void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
 
    auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kConsole);
-#if defined(_WIN32)
+#if !defined(__linux__)
    ::fwrite(buffer.data(), 1, buffer.size(), stdout);
 #else
    ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
