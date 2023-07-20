@@ -33,8 +33,10 @@ elog::tid_t ProcessInfo::GetTid()
 {
 #if defined(_WIN32)
    thread_local auto tid = GetCurrentThreadId();
+#elif defined(__linux__)
+   auto              tid = syscall(SYS_gettid);
 #else
-   elog::tid_t       tid;
+   elog::tid_t tid;
 
    auto id = std::this_thread::get_id();
    tid     = *reinterpret_cast<tid_t*>(&id);
