@@ -7,6 +7,7 @@
 #include <cstring>
 #include <thread>
 #include <vector>
+#include <string>
 
 #include "count_down_latch.h"
 #include "noncopyable.h"

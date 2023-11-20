@@ -47,7 +47,8 @@ public:
 
    void LogConsole(Config* config, context const& ctx);
 
-   [[maybe_unused]] static void LogConsoleUnsafe(Config* config, context const& ctx);
+   [[maybe_unused]] static void LogConsoleUnsafe(Config*        config,
+                                                 context const& ctx);
 
 private:
    void init_data();
@@ -175,7 +176,8 @@ public:
    {
       context  ctx;
       buffer_t buffer;
-      fmt::format_to(std::back_inserter(buffer), "{}, ", std::forward<T>(first));
+      fmt::format_to(std::back_inserter(buffer), "{}, ",
+                     std::forward<T>(first));
       println_(ctx, buffer, std::forward<Args>(args)...);
    }
 
@@ -554,10 +556,11 @@ LBLOG_NAMESPACE_END
 #ifdef ENABLE_ELG_CHECK
 // check micro
 #define ELG_CHECK(condition)                                                   \
-   elog::Check(condition,elog::source_location::current())
+   elog::Check(condition, elog::source_location::current())
 
 #define ELG_ASSERT_IF(cond)                                                    \
-   elog::CheckIfFatal((cond), elog::source_location::current(), "assertion failed:\"" #cond "\"")
+   elog::CheckIfFatal((cond), elog::source_location::current(),                \
+                      "assertion failed:\"" #cond "\"")
 
 #define ELG_CHECK_NOTNULL(ptr) (ELG_ASSERT_IF(ptr != nullptr), ptr)
 
@@ -578,20 +581,20 @@ LBLOG_NAMESPACE_END
 #ifdef ENABLE_ELG_LOG
 // log with position micro
 #define ELG_TRACE(fmt, ...)                                                    \
-   elog::Log::trace(elog::loc::current(), fmt, ##__VA_ARGS__)
+   elog::Log::trace(elog::loc::current(__FILE__, __LINE__), fmt, ##__VA_ARGS__)
 
 #define ELG_DEBUG(fmt, ...)                                                    \
-   elog::Log::debug(elog::loc::current(), fmt, ##__VA_ARGS__)
+   elog::Log::debug(elog::loc::current(__FILE__, __LINE__), fmt, ##__VA_ARGS__)
 
 #define ELG_INFO(fmt, ...)                                                     \
-   elog::Log::info(elog::loc::current(), fmt, ##__VA_ARGS__)
+   elog::Log::info(elog::loc::current(__FILE__, __LINE__), fmt, ##__VA_ARGS__)
 
 #define ELG_WARN(fmt, ...)                                                     \
-   elog::Log::warn(elog::loc::current(), fmt, ##__VA_ARGS__)
+   elog::Log::warn(elog::loc::current(__FILE__, __LINE__), fmt, ##__VA_ARGS__)
 
 #define ELG_ERROR(fmt, ...)                                                    \
-   elog::Log::error(elog::loc::current(), fmt, ##__VA_ARGS__)
+   elog::Log::error(elog::loc::current(__FILE__, __LINE__), fmt, ##__VA_ARGS__)
 
 #define ELG_FATAL(fmt, ...)                                                    \
-   elog::Log::fatal(elog::loc::current(), fmt, ##__VA_ARGS__)
+   elog::Log::fatal(elog::loc::current(__FILE__, __LINE__), fmt, ##__VA_ARGS__)
 #endif

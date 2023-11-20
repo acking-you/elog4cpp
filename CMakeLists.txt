@@ -31,7 +31,8 @@ else ()
     add_subdirectory(dependencies/ejson4cpp EXCLUDE_FROM_ALL)
 endif ()
 
-option(ENABLE_TEST "Build unittest." OFF)
+option(ENABLE_ELG_TEST "Build unittest." OFF)
+option(ENABLE_ELG_EXAMPLE "Build examples." OFF)
 
 file(GLOB SRC ${PROJECT_SOURCE_DIR}/src/*.cc)
 
@@ -54,8 +55,13 @@ elseif (WIN32)
     MESSAGE(STATUS "Now is windows")
 endif ()
 
-if (ENABLE_TEST)
+if (ENABLE_ELG_TEST)
     enable_testing()
     message("BUILD_UNITTEST")
     add_subdirectory(tests)
+endif ()
+
+if (ENABLE_ELG_EXAMPLE)
+    message("BUILD_EXAMPLE")
+    add_subdirectory(examples)
 endif ()
