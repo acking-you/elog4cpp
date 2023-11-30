@@ -28,8 +28,7 @@ struct Timer
 void set_console_json_config()
 {
    GlobalConfig::Get()
-     .enableConsole(false)
-     .setFilepath(PROJECT_ROOT "tests/test_log/")
+     .enableConsole(true)
      .setLevel(elog::kInfo)
      .setFormatter(formatter::jsonFormatter)
      .setFlag(kStdFlags + kThreadId);
@@ -38,8 +37,7 @@ void set_console_json_config()
 void set_console_colorful_config()
 {
    GlobalConfig::Get()
-     .enableConsole(false)
-     .setFilepath(PROJECT_ROOT "tests/test_log/")
+     .enableConsole(true)
      .setFormatter(formatter::colorfulFormatter)
      .setFlag(kStdFlags + kThreadId);
 }
@@ -47,8 +45,7 @@ void set_console_colorful_config()
 void set_custom_config()
 {
    GlobalConfig::Get()
-     .enableConsole(false)
-     .setFilepath(PROJECT_ROOT "tests/test_log/")
+     .enableConsole(true)
      .setFormatter(
        formatter::customFromString("[%n][%T][tid:%t][%L][%F][%f]: %v"))
      .setFlag(kStdFlags + kThreadId);
@@ -58,7 +55,6 @@ void set_timer_callback_and_load_config()
 {
    GlobalConfig::Get()
      .loadFromJSON(PROJECT_ROOT "config.json")
-     .setFilepath(PROJECT_ROOT "tests/test_log/")
      .setBefore([](output_buf_t& bf) {
         bf.setContext(Timer{});
         auto& tm = any_cast<Timer&>(bf.getMutableContext());

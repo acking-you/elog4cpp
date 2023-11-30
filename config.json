@@ -16,8 +16,8 @@
     "flush_interval": 3,
     "formatter": "default",
     "level": "debug",
-    "out_console": false,
-    "out_file": "../../log/",
+    "out_console": true,
+    "out_file": "null",
     "roll_size": 20
   }
 }
