@@ -63,7 +63,7 @@ inline const char* GET_ANSI_COLOR_BY_LEVEL(int level)
 #define IS_SET(log_flag_, flags_) (INT(log_flag_) & INT(flags_))
 }   // namespace
 
-void formatter::defaultFormatter(Config* config, context const& ctx,
+void formatter::defaultFormatter(Config* config, SharedContext const& ctx,
                                  buffer_t& buffer, Appenders outType)
 {
    assert(config != nullptr);
@@ -74,13 +74,13 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
      trigger_helper(&t_outputBuffer, &config->log_before, &config->log_after);
 
    // prepare data
-   auto* levelText = GET_LEVEL_TEXT(ctx.level);
+   auto* levelText = GET_LEVEL_TEXT(ctx->level);
    auto* funcName =
-     IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
+     IS_SET(config->log_flag, Flags::kFuncName) ? ctx->func_name : nullptr;
    auto* filename =
      IS_SET(config->log_flag, Flags::kLongname)
-       ? ctx.long_filename
-       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+       ? ctx->long_filename
+       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx->short_filename
                                                       : nullptr);
    Flags logFlag = config->log_flag;
    // log name
@@ -100,12 +100,12 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
 
    if (IS_SET(logFlag, Flags::kThreadId))
    {   // log thread id
-      fmt::format_to(fmt::appender(buffer), "[tid:{:d}]", ctx.tid);
+      fmt::format_to(fmt::appender(buffer), "[tid:{:d}]", ctx->tid);
    }
    if (filename)
    {
       fmt::format_to(fmt::appender(buffer), "[{}:{:d}]", filename,
-                     ctx.line);   // log file-line
+                     ctx->line);   // log file-line
    }
    // log func_name
    if (funcName)
@@ -114,12 +114,12 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
                      funcName);   // log file-line
    }
 
-   fmt::string_view text{ctx.text.data(), ctx.text.size()};
+   fmt::string_view text{ctx->text.data(), ctx->text.size()};
 
-   if (ctx.level >= INT(Levels::kError) && ctx.err != 0)
+   if (ctx->level >= INT(Levels::kError) && ctx->err != 0)
    {   // if level >= Error,get the error info
       fmt::format_to(fmt::appender(buffer), ": {} ^system error code:{}", text,
-                     ctx.err);   // 打印系统错误提示信息
+                     ctx->err);   // 打印系统错误提示信息
    }
    else
    {
@@ -128,7 +128,7 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
    }
 }
 
-void formatter::colorfulFormatter(Config* config, context const& ctx,
+void formatter::colorfulFormatter(Config* config, SharedContext const& ctx,
                                   buffer_t& buffer, Appenders outType)
 {
    assert(config != nullptr);
@@ -139,13 +139,13 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
      trigger_helper(&t_outputBuffer, &config->log_before, &config->log_after);
 
    // prepare data
-   auto* levelText = GET_LEVEL_TEXT(ctx.level);
+   auto* levelText = GET_LEVEL_TEXT(ctx->level);
    auto* funcName =
-     IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
+     IS_SET(config->log_flag, Flags::kFuncName) ? ctx->func_name : nullptr;
    auto* filename =
      IS_SET(config->log_flag, Flags::kLongname)
-       ? ctx.long_filename
-       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+       ? ctx->long_filename
+       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx->short_filename
                                                       : nullptr);
    Flags logFlag = config->log_flag;
    // log name
@@ -154,7 +154,7 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
       if (outType == kConsole)
       {
          fmt::format_to(std::back_inserter(buffer),
-                        fg(GET_COLOR_BY_LEVEL(ctx.level)), "[{}]",
+                        fg(GET_COLOR_BY_LEVEL(ctx->level)), "[{}]",
                         config->log_name);
       }
       else
@@ -173,7 +173,7 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    if (outType == Appenders::kConsole)   // colorful
    {
       fmt::format_to(std::back_inserter(buffer),
-                     fg(GET_COLOR_BY_LEVEL(ctx.level)), "[{}]", levelText);
+                     fg(GET_COLOR_BY_LEVEL(ctx->level)), "[{}]", levelText);
    }
    else
    {   // nocolor
@@ -181,12 +181,12 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    }
    if (IS_SET(logFlag, Flags::kThreadId))
    {   // log thread id
-      fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", ctx.tid);
+      fmt::format_to(std::back_inserter(buffer), "[tid:{:d}]", ctx->tid);
    }
    if (filename)
    {
       fmt::format_to(std::back_inserter(buffer), "[{}:{:d}]", filename,
-                     ctx.line);   // log file-line
+                     ctx->line);   // log file-line
    }
    // log func_name
    if (funcName)
@@ -194,30 +194,30 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
       fmt::format_to(std::back_inserter(buffer), "[func:{}]",
                      funcName);   // log file-line
    }
-   fmt::string_view text{ctx.text.data(), ctx.text.size()};
+   fmt::string_view text{ctx->text.data(), ctx->text.size()};
    if (outType == Appenders::kConsole)   // colorful
    {
-      if (ctx.level >= INT(Levels::kError) && ctx.err != 0)
+      if (ctx->level >= INT(Levels::kError) && ctx->err != 0)
       {   // if level >= Error,get the error info
          fmt::format_to(std::back_inserter(buffer),
-                        fg(GET_COLOR_BY_LEVEL(ctx.level)),
+                        fg(GET_COLOR_BY_LEVEL(ctx->level)),
                         ": {} ^system error code:{}", text,
-                        ctx.err);   // 打印系统错误提示信息
+                        ctx->err);   // 打印系统错误提示信息
       }
       else
       {
          fmt::format_to(std::back_inserter(buffer),
-                        fg(GET_COLOR_BY_LEVEL(ctx.level)), ": {}",
+                        fg(GET_COLOR_BY_LEVEL(ctx->level)), ": {}",
                         text);   // log info
       }
    }
    else
    {   // nocolor
-      if (ctx.level >= INT(Levels::kError) && ctx.err != 0)
+      if (ctx->level >= INT(Levels::kError) && ctx->err != 0)
       {   // if level >= Error,get the error info
          fmt::format_to(std::back_inserter(buffer),
                         ": {} ^system error code:{}", text,
-                        ctx.err);   // 打印提示信息
+                        ctx->err);   // 打印提示信息
       }
       else
       {
@@ -227,7 +227,7 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    }
 }
 
-void formatter::jsonFormatter(Config* config, context const& ctx,
+void formatter::jsonFormatter(Config* config, SharedContext const& ctx,
                               buffer_t& buffer, Appenders outType)
 {
    assert(config != nullptr);
@@ -240,13 +240,13 @@ void formatter::jsonFormatter(Config* config, context const& ctx,
    // prepare data
    auto* dateText =
      Util::getCurDateTime(IS_SET(config->log_flag, Flags::kTime));
-   auto* levelText = GET_LEVEL_TEXT(ctx.level, true);
+   auto* levelText = GET_LEVEL_TEXT(ctx->level, true);
    auto* funcName =
-     IS_SET(config->log_flag, Flags::kFuncName) ? ctx.func_name : nullptr;
+     IS_SET(config->log_flag, Flags::kFuncName) ? ctx->func_name : nullptr;
    auto* filename =
      IS_SET(config->log_flag, Flags::kLongname)
-       ? ctx.long_filename
-       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx.short_filename
+       ? ctx->long_filename
+       : (IS_SET(config->log_flag, Flags::kShortname) ? ctx->short_filename
                                                       : nullptr);
    t_outputBuffer.push_back('{');
    if (config->log_name)
@@ -257,20 +257,21 @@ void formatter::jsonFormatter(Config* config, context const& ctx,
    if (levelText) { t_outputBuffer.formatTo(R"(, "level":"{}")", levelText); }
    if (IS_SET(config->log_flag, Flags::kThreadId))
    {
-      t_outputBuffer.formatTo(R"(, "tid":"{:d}")", ctx.tid);
+      t_outputBuffer.formatTo(R"(, "tid":"{:d}")", ctx->tid);
    }
    if (filename)
    {
       if (IS_SET(config->log_flag, Flags::kLine))
       {
-         t_outputBuffer.formatTo(R"(, "file":"{}:{:d}")", filename, ctx.line);
+         t_outputBuffer.formatTo(R"(, "file":"{}:{:d}")", filename, ctx->line);
       }
       else { t_outputBuffer.formatTo(R"(, "file":"{}")", filename); }
    }
    if (funcName) { t_outputBuffer.formatTo(R"(, "func":"{}")", funcName); }
 
-   t_outputBuffer.formatTo(R"(, "message":"{}")",
-                           fmt::string_view{ctx.text.data(), ctx.text.size()});
+   t_outputBuffer.formatTo(
+     R"(, "message":"{}")",
+     fmt::string_view{ctx->text.data(), ctx->text.size()});
    t_outputBuffer.push_back('}');
 }
 
@@ -278,7 +279,7 @@ void formatter::jsonFormatter(Config* config, context const& ctx,
 //  %L:long levelText,%l:short levelText,%n:name,%v:message ,%c color start %C
 //  color end
 void formatter::customStringFormatter(const char* raw_format_str,
-                                      Config* config, context const& ctx,
+                                      Config* config, SharedContext const& ctx,
                                       buffer_t& buffer, Appenders outType)
 {
    assert(config != nullptr);
@@ -309,19 +310,19 @@ void formatter::customStringFormatter(const char* raw_format_str,
             break;
          }
          case "%t"_i: {
-            outputBuffer.formatTo("{:d}", ctx.tid);
+            outputBuffer.formatTo("{:d}", ctx->tid);
             break;
          }
          case "%F"_i: {
             auto* filepath = IS_SET(config->log_flag, Flags::kLongname)
-                               ? ctx.long_filename
+                               ? ctx->long_filename
                                : (IS_SET(config->log_flag, Flags::kShortname)
-                                    ? ctx.short_filename
+                                    ? ctx->short_filename
                                     : nullptr);
             if (filepath)
             {
                if (IS_SET(config->log_flag, Flags::kLine))
-                  outputBuffer.formatTo("{}:{:d}", filepath, ctx.line);
+                  outputBuffer.formatTo("{}:{:d}", filepath, ctx->line);
 
                else outputBuffer.append(filepath);
             }
@@ -329,28 +330,28 @@ void formatter::customStringFormatter(const char* raw_format_str,
          }
          case "%f"_i: {
             auto* funcName = IS_SET(config->log_flag, Flags::kFuncName)
-                               ? ctx.func_name
+                               ? ctx->func_name
                                : nullptr;
             if (funcName) outputBuffer.append(funcName);
             break;
          }
          case "%e"_i: {
-            if (ctx.level < INT(Levels::kError) || ctx.err == 0) break;
-            outputBuffer.append(Util::getErrorInfo(ctx.err));
+            if (ctx->level < INT(Levels::kError) || ctx->err == 0) break;
+            outputBuffer.append(Util::getErrorInfo(ctx->err));
             break;
          }
          case "%L"_i: {
-            auto* longLevelText = GET_LEVEL_TEXT(ctx.level);
+            auto* longLevelText = GET_LEVEL_TEXT(ctx->level);
             if (longLevelText) outputBuffer.append(longLevelText);
             break;
          }
          case "%l"_i: {
-            auto* shortLevelText = GET_LEVEL_TEXT(ctx.level, true);
+            auto* shortLevelText = GET_LEVEL_TEXT(ctx->level, true);
             if (shortLevelText) outputBuffer.append(shortLevelText);
             break;
          }
          case "%v"_i: {
-            outputBuffer.append(ctx.text);
+            outputBuffer.append(ctx->text);
             break;
          }
          case "%n"_i: {
@@ -361,7 +362,7 @@ void formatter::customStringFormatter(const char* raw_format_str,
             // only console support
             if (outType != Appenders::kConsole) break;
             // color start
-            outputBuffer.append(GET_ANSI_COLOR_BY_LEVEL(ctx.level));
+            outputBuffer.append(GET_ANSI_COLOR_BY_LEVEL(ctx->level));
             break;
          }
          case "%C"_i: {

@@ -1,6 +1,7 @@
 #include "elog/logger.h"
 
 #include <cassert>
+#include <sstream>
 
 #include "elog/processinfo.h"
 
@@ -58,16 +59,13 @@ Config* LoggerImpl::getConfig(StringView name)
    return item->second.get();
 }
 
-void LoggerImpl::LogFile(Config* config, context const& ctx)
+void LoggerImpl::LogFile(Config* config, SharedContext const& ctx)
 {
    assert(config != nullptr);
-   inner_message msg;
-   msg.config = config;
-   msg.source = inner_logsource::fromContext(ctx);
-   m_logging->pushMsg(msg);
+   m_logging->pushMsg({config, ctx});
 }
 
-void LoggerImpl::LogConsole(Config* config, const context& ctx)
+void LoggerImpl::LogConsole(Config* config, const SharedContext& ctx)
 {
    assert(config != nullptr);
 
@@ -85,7 +83,7 @@ void LoggerImpl::LogConsole(Config* config, const context& ctx)
    std::fflush(stdout);
 }
 
-void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
+void LoggerImpl::LogConsoleUnsafe(Config* config, const SharedContext& ctx)
 {
    assert(config != nullptr);
 
@@ -99,26 +97,29 @@ void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
    std::fflush(stdout);
 }
 
-void LoggerImpl::DoInternalLog(const context& ctx)
+void LoggerImpl::DoInternalLog(const SharedContext& ctx)
 {
    if (GLOB_CONFIG.log_level != Levels::kTrace) { return; }
    if (GLOB_CONFIG.log_console) { GetInstance().LogConsole(&GLOB_CONFIG, ctx); }
 }
 
 // 全局config logger输出
-void LoggerImpl::DoLog(context const& ctx) { DoConfigLog(&GLOB_CONFIG, ctx); }
+void LoggerImpl::DoLog(SharedContext const& ctx)
+{
+   DoConfigLog(&GLOB_CONFIG, ctx);
+}
 
 // 自定义config logger输出
-void LoggerImpl::DoConfigLog(Config* config, const context& ctx)
+void LoggerImpl::DoConfigLog(Config* config, const SharedContext& ctx)
 {
    assert(config != nullptr);
    // FIXME
    // 输出到控制台没有进行任何性能优化，输出控制台方便开发时调试，输出到文件可以方便后续问题的跟踪
-   if (ctx.level < static_cast<int>(config->log_level)) return;
+   if (ctx->level < static_cast<int>(config->log_level)) return;
    if (m_logging) LogFile(config, ctx);
    if (GLOB_CONFIG.log_console) LogConsole(config, ctx);
 
-   if (ctx.level == static_cast<int>(Levels::kFatal))
+   if (ctx->level == static_cast<int>(Levels::kFatal))
    {
       waitForDone();   // 等待刷盘落地
       throw std::runtime_error("fatal error occurred");
@@ -131,11 +132,11 @@ Log& Log::instance()
    return t_log;
 }
 
-void Log::log_it_(context& ctx) const
+void Log::log_it_(SharedContext& ctx) const
 {
-   ctx.level = m_level;
-   ctx.tid   = elog::ProcessInfo::GetTid();
-   ctx.err   = errno;
+   ctx->level = m_level;
+   ctx->tid   = elog::ProcessInfo::GetTid();
+   ctx->err   = errno;
    detail::LoggerImpl::GetInstance().DoConfigLog(
      m_config ? m_config : &GlobalConfig::Get(), ctx);
 }

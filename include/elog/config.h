@@ -5,6 +5,7 @@
 #include "formatter.h"
 
 namespace elog {
+// Config must have static lifetime
 struct Config
 {
    Flags       log_flag  = Flags::kStdFlags;

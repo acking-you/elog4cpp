@@ -4,11 +4,11 @@
 
 #pragma once
 #include <atomic>
-#include <string>
 #include <cstring>
+#include <memory>
+#include <string>
 #include <thread>
 #include <vector>
-#include <string>
 
 #include "count_down_latch.h"
 #include "noncopyable.h"
@@ -17,6 +17,7 @@ LBLOG_NAMESPACE_BEGIN
 
 struct context;
 struct Config;
+using SharedContext = std::shared_ptr<context>;
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -25,24 +26,10 @@ struct Config;
 namespace detail {
 enum { kSmallBuffer = 4096, kLargeBuffer = 65536 };
 
-struct inner_logsource
-{
-   int          level{};
-   unsigned int tid{};
-   int          line{};
-   const char*  short_filename{};
-   const char*  long_filename{};
-   const char*  func_name{};
-   std::string  text;
-
-   static inner_logsource fromContext(const context& ctx);
-   [[nodiscard]] context  toContext() const;
-};
-
 struct inner_message
 {
-   Config*         config{};
-   inner_logsource source;
+   Config*       config{};
+   SharedContext source;
 };
 
 template <int SIZE>

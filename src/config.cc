@@ -88,8 +88,8 @@ struct config
 
    static const char* to_formatter(const formatter_t& formatter)
    {
-      auto f = formatter.target<void (*)(Config*, context const&, buffer_t&,
-                                         Appenders appenderType)>();
+      auto f = formatter.target<void (*)(Config*, SharedContext const&,
+                                         buffer_t&, Appenders appenderType)>();
       if (!f) return nullptr;
       if (*f == formatter::defaultFormatter) { return "default"; }
       if (*f == formatter::colorfulFormatter) { return "colorful"; }

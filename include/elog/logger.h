@@ -35,20 +35,20 @@ public:
 
    Config* getConfig(StringView name);
 
-   void DoLog(context const& ctx);
+   void DoLog(SharedContext const& ctx);
 
    // 自定义化的config打印
-   void DoConfigLog(Config* config, context const& ctx);
+   void DoConfigLog(Config* config, SharedContext const& ctx);
 
    // 打印Logger内部情况
-   static void DoInternalLog(context const& ctx);
+   static void DoInternalLog(SharedContext const& ctx);
 
-   void LogFile(Config* config, context const& ctx);
+   void LogFile(Config* config, SharedContext const& ctx);
 
-   void LogConsole(Config* config, context const& ctx);
+   void LogConsole(Config* config, SharedContext const& ctx);
 
-   [[maybe_unused]] static void LogConsoleUnsafe(Config*        config,
-                                                 context const& ctx);
+   [[maybe_unused]] static void LogConsoleUnsafe(Config*              config,
+                                                 SharedContext const& ctx);
 
 private:
    void init_data();
@@ -60,12 +60,12 @@ private:
    std::mutex                                 m_mutex;
 };
 
-inline void DoLog(context& ctx)
+inline void DoLog(const SharedContext& ctx)
 {
    detail::LoggerImpl::GetInstance().DoLog(ctx);
 }
 
-inline void DoInternalLog(context& ctx)
+inline void DoInternalLog(SharedContext const& ctx)
 {
    detail::LoggerImpl::DoInternalLog(ctx);
 }
@@ -76,7 +76,7 @@ inline void DoInternalLog(context& ctx)
  * @param len
  * @return
  */
-inline constexpr size_t GetStrLen(const char* str, size_t len = 0)
+inline constexpr size_t GetStrLen(const char* str, size_t len = 0)   // NOLINT
 {
    return str[len] ? GetStrLen(str, len + 1) + 1 : 0;
 }
@@ -88,7 +88,7 @@ inline constexpr size_t GetStrLen(const char* str, size_t len = 0)
  * @return
  */
 inline constexpr const char* GetShortName(const char* filename,
-                                          size_t      len = string::npos)
+                                          size_t len = string::npos)   // NOLINT
 {
    return len == string::npos
             ? (len = GetStrLen(filename), GetShortName(filename, len))
@@ -109,7 +109,7 @@ inline constexpr const char* GetShortName(const char* filename,
  * @param config
  * @param ctx
  */
-inline void DoConfigLog(Config* config, context& ctx)
+inline void DoConfigLog(Config* config, SharedContext const& ctx)
 {
    detail::LoggerImpl::GetInstance().DoConfigLog(config, ctx);
 }
@@ -174,7 +174,7 @@ public:
    template <typename T, typename... Args>
    void println(T&& first, Args&&... args) const
    {
-      context  ctx;
+      auto     ctx = context::New();
       buffer_t buffer;
       fmt::format_to(std::back_inserter(buffer), "{}, ",
                      std::forward<T>(first));
@@ -184,10 +184,11 @@ public:
    template <typename T, typename... Args>
    void println(source_location const& loc, T&& first, Args&&... args) const
    {
-      context ctx;
+      auto ctx = context::New();
       init_context_(ctx, loc);
       buffer_t buffer;
       fmt::format_to(std::back_inserter(buffer), "{}, ", first);
+      ctx->text = fmt::format("{}", first);
       println_(ctx, buffer, std::forward<Args>(args)...);
    }
 
@@ -205,8 +206,8 @@ public:
              typename std::enable_if<ELOG_ENABLE_IS_STRING, bool>::type = true>
    void println(T&& first) const
    {
-      context ctx;
-      ctx.text = first;
+      auto ctx  = context::New();
+      ctx->text = first;
       log_it_(ctx);
    }
 
@@ -214,10 +215,8 @@ public:
              typename std::enable_if<ELOG_ENABLE_NOT_STRING, bool>::type = true>
    void println(T&& first) const
    {
-      context  ctx;
-      buffer_t buffer;
-      fmt::format_to(std::back_inserter(buffer), "{}", first);
-      ctx.text = StringView{buffer.data(), buffer.size()};
+      auto ctx  = context::New();
+      ctx->text = fmt::format("{}", first);
       log_it_(ctx);
    }
 
@@ -225,9 +224,9 @@ public:
              typename std::enable_if<ELOG_ENABLE_IS_STRING, bool>::type = true>
    void println(source_location const& loc, T&& first) const
    {
-      context ctx;
+      auto ctx = context::New();
       init_context_(ctx, loc);
-      ctx.text = first;
+      ctx->text = std::string(std::forward<T>(first));
       log_it_(ctx);
    }
 
@@ -235,11 +234,9 @@ public:
              typename std::enable_if<ELOG_ENABLE_NOT_STRING, bool>::type = true>
    void println(source_location const& loc, T&& first) const
    {
-      context ctx;
+      auto ctx = context::New();
       init_context_(ctx, loc);
-      buffer_t buffer;
-      fmt::format_to(std::back_inserter(buffer), "{}", first);
-      ctx.text = StringView{buffer.data(), buffer.size()};
+      ctx->text = fmt::format("{}", std::forward<T>(first));
       log_it_(ctx);
    }
 
@@ -258,11 +255,8 @@ public:
    template <typename... Args>
    void printf(format_string_t<Args...> format, Args&&... args) const
    {
-      context  ctx;
-      buffer_t buffer;
-      fmt::format_to(std::back_inserter(buffer), format,
-                     std::forward<Args>(args)...);
-      ctx.text = StringView{buffer.data(), buffer.size()};
+      auto ctx  = context::New();
+      ctx->text = fmt::format(format, std::forward<Args>(args)...);
       log_it_(ctx);
    }
 
@@ -270,12 +264,9 @@ public:
    void printf(source_location const& loc, format_string_t<Args...> format,
                Args&&... args) const
    {
-      context ctx;
+      auto ctx = context::New();
       init_context_(ctx, loc);
-      buffer_t buffer;
-      fmt::format_to(std::back_inserter(buffer), format,
-                     std::forward<Args>(args)...);
-      ctx.text = StringView{buffer.data(), buffer.size()};
+      ctx->text = fmt::format(format, std::forward<Args>(args)...);
       log_it_(ctx);
    }
 
@@ -451,7 +442,7 @@ public:
 private:
    static Log& instance();
 
-   void log_it_(context& ctx) const;
+   void log_it_(SharedContext& ctx) const;
 
    static bool should_log_(Levels level)
    {
@@ -459,7 +450,7 @@ private:
    }
 
    template <typename T, typename... Args>
-   void println_(context& ctx, buffer_t& buffer, T&& first,
+   void println_(SharedContext& ctx, buffer_t& buffer, T&& first,
                  Args&&... args) const
    {
       fmt::format_to(std::back_inserter(buffer), "{}, ", first);
@@ -467,19 +458,20 @@ private:
    }
 
    template <typename T>
-   void println_(context& ctx, buffer_t& buffer, T&& first) const
+   void println_(SharedContext& ctx, buffer_t& buffer, T&& first) const
    {
       fmt::format_to(std::back_inserter(buffer), "{}", first);
-      ctx.text = StringView{buffer.data(), buffer.size()};
+      ctx->text = fmt::to_string(buffer);
       log_it_(ctx);
    }
 
-   static void init_context_(context& ctx, source_location const& location)
+   static void init_context_(SharedContext&         ctx,
+                             source_location const& location)
    {
-      ctx.line           = location.line();
-      ctx.func_name      = location.function_name();
-      ctx.long_filename  = location.file_name();
-      ctx.short_filename = detail::GetShortName(ctx.long_filename);
+      ctx->line           = location.line();   // NOLINT
+      ctx->func_name      = location.function_name();
+      ctx->long_filename  = location.file_name();
+      ctx->short_filename = detail::GetShortName(ctx->long_filename);
    }
 
 private:

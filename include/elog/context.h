@@ -1,4 +1,6 @@
 #pragma once
+#include <memory>
+
 #include "string_view.h"
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -20,14 +22,24 @@ struct context
    const char*         short_filename{};
    const char*         long_filename{};
    const char*         func_name{};
-   StringView          text;
+   std::string         text;
    // 计算中间经常可变的位置信息长度，可用于通过memset优化清零
    static unsigned int GetNoTextAndLevelLength(context& ctx)
    {
       static const unsigned int s_ctx_len = (char*)&ctx.text - (char*)&ctx.line;
       return s_ctx_len;
    }
+
+   static std::shared_ptr<context> New()
+   {
+#if __cplusplus >= 201403L || (_MSC_VER && _MSVC_LANG >= 201403L)
+      return std::make_shared<context>();
+#else
+      return SharedContext{new context};
+#endif
+   }
 };
+using SharedContext = std::shared_ptr<context>;
 }   // namespace elog
 
 #ifdef _MSC_VER

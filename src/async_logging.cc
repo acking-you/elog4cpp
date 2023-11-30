@@ -14,31 +14,6 @@
 
 using namespace elog::detail;
 
-inner_logsource inner_logsource::fromContext(const context& ctx)
-{
-   inner_logsource source;
-   source.line           = ctx.line;
-   source.tid            = ctx.tid;
-   source.level          = ctx.level;
-   source.func_name      = ctx.func_name;
-   source.short_filename = ctx.short_filename;
-   source.long_filename  = ctx.long_filename;
-   source.text           = std::string(ctx.text.data(), ctx.text.size());
-   return source;
-}
-elog::context inner_logsource::toContext() const
-{
-   context ctx;
-   ctx.line           = line;
-   ctx.tid            = tid;
-   ctx.level          = level;
-   ctx.func_name      = func_name;
-   ctx.short_filename = short_filename;
-   ctx.long_filename  = long_filename;
-   ctx.text           = text;
-   return ctx;
-}
-
 AsyncLogging::AsyncLogging(const char* basename, int rollSize,
                            int flushInterval)
 
@@ -51,7 +26,7 @@ AsyncLogging::AsyncLogging(const char* basename, int rollSize,
    // 由于构造函数抛出异常不会调用析构，所以需要做异常安全处理
    try
    {
-#if __cplusplus >= 201403L
+#if __cplusplus >= 201403L || (_MSVC_LANG >= 201403L)
       m_thread = std::make_unique<std::thread>([this]() { thread_worker(); });
 #else
       m_thread = std::unique_ptr<std::thread>(
@@ -80,10 +55,7 @@ void AsyncLogging::do_done()
 
    m_cv.notify_one();   // 由于只控制一个线程
 
-   if (m_thread && m_thread->joinable())
-   {
-      m_thread->join();
-   }
+   if (m_thread && m_thread->joinable()) { m_thread->join(); }
 }
 
 void AsyncLogging::waitDone()
@@ -123,7 +95,6 @@ void AsyncLogging::pushMsg(inner_message const& msg)
    m_cv.notify_one();   // 通知消费
 }
 
-
 // 异步写入和内存复用
 void AsyncLogging::thread_worker()
 {
@@ -155,14 +126,14 @@ void AsyncLogging::thread_worker()
             if (m_curBuffer.avail() > 0)
             {
                m_buffers.push_back(std::move(m_curBuffer));
-               m_curBuffer = std::move(newBuffer1);   // 换上新的内存
+               m_curBuffer = std::move(newBuffer1);   // NOLINT
             }
             // 交换到buffer减小临界区
             buffersToWrite.swap(m_buffers);
             if (!m_nextBuffer.valid())
             {
                // 顺便更新下nextBuffer的内存
-               m_nextBuffer = std::move(newBuffer2);
+               m_nextBuffer = std::move(newBuffer2);   // NOLINT
             }
          }
 
@@ -188,8 +159,8 @@ void AsyncLogging::thread_worker()
             {
                buffer_t formatBuffer;
                // 格式化
-               it.config->log_formatter(it.config, it.source.toContext(),
-                                        formatBuffer, kFile);
+               it.config->log_formatter(it.config, it.source, formatBuffer,
+                                        kFile);
                // 开始写入文件
                output.append(formatBuffer.data(),
                              static_cast<int>(formatBuffer.size()));

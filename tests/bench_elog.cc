@@ -9,7 +9,8 @@ void before_bench()
 {
    GlobalConfig::Get()
      .loadFromJSON("../../config.json")
-     .setFilepath(PROJECT_ROOT "tests/test_log/");
+     .setFilepath(PROJECT_ROOT "tests/test_log/")
+     .enableConsole(false);
 }
 
 void one_thread_async(int bench_n, int test_n)
