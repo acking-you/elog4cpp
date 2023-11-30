@@ -6,7 +6,8 @@
 #include "elog/switch_helper.h"
 #include "fmt/color.h"
 
-LBLOG_NAMESPACE_BEGIN
+using namespace elog;
+
 namespace {
 
 #define LEVEL_COUNT static_cast<int>(Levels::kLevelCount)
@@ -115,8 +116,8 @@ void formatter::defaultFormatter(Config* config, context const& ctx,
 
    fmt::string_view text{ctx.text.data(), ctx.text.size()};
 
-   if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
-   {                             // if level >= Error,get the error info
+   if (ctx.level >= INT(Levels::kError) && ctx.err != 0)
+   {   // if level >= Error,get the error info
       fmt::format_to(fmt::appender(buffer), ": {} ^system error code:{}", text,
                      ctx.err);   // 打印系统错误提示信息
    }
@@ -196,7 +197,7 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    fmt::string_view text{ctx.text.data(), ctx.text.size()};
    if (outType == Appenders::kConsole)   // colorful
    {
-      if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
+      if (ctx.level >= INT(Levels::kError) && ctx.err != 0)
       {   // if level >= Error,get the error info
          fmt::format_to(std::back_inserter(buffer),
                         fg(GET_COLOR_BY_LEVEL(ctx.level)),
@@ -212,7 +213,7 @@ void formatter::colorfulFormatter(Config* config, context const& ctx,
    }
    else
    {   // nocolor
-      if (ctx.level >= INT(Levels::kError) && ctx.err!=0)
+      if (ctx.level >= INT(Levels::kError) && ctx.err != 0)
       {   // if level >= Error,get the error info
          fmt::format_to(std::back_inserter(buffer),
                         ": {} ^system error code:{}", text,
@@ -276,9 +277,9 @@ void formatter::jsonFormatter(Config* config, context const& ctx,
 // use %T:time,%t:tid,%F:filepath,%f:func, %e:error info
 //  %L:long levelText,%l:short levelText,%n:name,%v:message ,%c color start %C
 //  color end
-void customStringFormatter(const StringView& format_str, Config* config,
-                           context const& ctx, buffer_t& buffer,
-                           Appenders outType)
+void formatter::customStringFormatter(const StringView& format_str,
+                                      Config* config, context const& ctx,
+                                      buffer_t& buffer, Appenders outType)
 {
    assert(config != nullptr);
    output_buf_t outputBuffer;
@@ -387,11 +388,3 @@ void customStringFormatter(const StringView& format_str, Config* config,
       if (index == format_str.size()) break;
    }
 }
-
-using namespace std::placeholders;
-auto formatter::customFromString(StringView formatString) -> formatter_t
-{
-   return std::bind(customStringFormatter, formatString, _1, _2, _3, _4);
-}
-
-LBLOG_NAMESPACE_END
