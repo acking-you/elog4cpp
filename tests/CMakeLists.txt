@@ -10,7 +10,7 @@ CPMAddPackage(
         GIT_TAG v4.1.0
         GIT_SHALLOW TRUE)
 
-add_definitions(-DPROJECT_ROOT="${PROJECT_SOURCE_DIR}/")
+add_definitions(-DPROJECT_ROOT= "${PROJECT_SOURCE_DIR}/")
 
 file(GLOB TEST_FILES
         "${PROJECT_SOURCE_DIR}/tests/test_*.cc"
@@ -28,7 +28,6 @@ add_test(NAME ${PROJECT_NAME}-unittest COMMAND unittest)
 
 add_executable(benchtest ${BENCH_FILES})
 target_link_libraries(benchtest PRIVATE doctest_with_main elog nanobench)
-add_test(NAME ${PROJECT_NAME}-benchtest COMMAND benchtest)
 
 add_executable(perf perf.cc)
 target_link_libraries(perf elog)
