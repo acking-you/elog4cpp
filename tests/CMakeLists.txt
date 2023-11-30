@@ -10,7 +10,7 @@ CPMAddPackage(
         GIT_TAG v4.1.0
         GIT_SHALLOW TRUE)
 
-add_definitions(-DPROJECT_ROOT= "${PROJECT_SOURCE_DIR}/")
+add_definitions(-DPROJECT_ROOT="${PROJECT_SOURCE_DIR}/")
 
 file(GLOB TEST_FILES
         "${PROJECT_SOURCE_DIR}/tests/test_*.cc"
