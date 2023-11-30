@@ -61,7 +61,7 @@
       FetchContent_Declare(
               elog4cpp
               GIT_REPOSITORY https://github.com/ACking-you/elog4cpp.git
-              GIT_TAG origin/master
+              GIT_TAG origin/fetch
               GIT_SHALLOW TRUE)
       FetchContent_MakeAvailable(elog4cpp)
       ```
@@ -74,7 +74,7 @@
   1. 通过git命令下载项目源码
 
       ```shell
-      git clone https://github.com/ACking-you/elog4cpp.git
+      git clone https://github.com/ACking-you/elog4cpp.git --recursive
       ````
 
   2. 将该项目添加到子项目中：

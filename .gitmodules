@@ -1,6 +1,0 @@
-[submodule "dependencies/fmt"]
-    path = dependencies/fmt
-    url = https://github.com/fmtlib/fmt.git
-[submodule "dependencies/ejson4cpp"]
-	path = dependencies/ejson4cpp
-	url = https://github.com/ACking-you/ejson4cpp.git

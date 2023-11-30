@@ -8,10 +8,13 @@
 #include <winsock.h>
 
 #include <cstdio>
-#else
+#elif defined(__linux__)
 #include <syscall.h>
 #include <unistd.h>
+#else
+#include <unistd.h>
 
+#include <thread>
 #endif
 
 using namespace elog;
@@ -30,12 +33,13 @@ elog::tid_t ProcessInfo::GetTid()
 {
 #if defined(_WIN32)
    thread_local auto tid = GetCurrentThreadId();
-#elif defined(__APPLE__)
-   elog::tid_t tid;
-   auto        id = std::this_thread::get_id();
-   tid            = *reinterpret_cast<tid_t*>(&id);
+#elif defined(__linux__)
+   auto tid = syscall(SYS_gettid);
 #else
-   thread_local auto tid = syscall(SYS_gettid);
+   elog::tid_t tid;
+
+   auto id = std::this_thread::get_id();
+   tid     = *reinterpret_cast<tid_t*>(&id);
 #endif
    return tid;
 }

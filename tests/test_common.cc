@@ -2,8 +2,6 @@
 #include <elog/logger.h>
 #include <fmt/ostream.h>
 
-#include <vector>
-
 
 using namespace elog;
 

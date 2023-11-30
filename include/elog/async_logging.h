@@ -4,6 +4,7 @@
 
 #pragma once
 #include <atomic>
+#include <string>
 #include <cstring>
 #include <thread>
 #include <vector>
@@ -115,6 +116,7 @@ private:
    const int                    m_flushInterval;
    const int                    m_rollSize;
    std::atomic<bool>            m_done;
+   std::once_flag               m_onceFlag;
    const char*                  m_basename;
    std::unique_ptr<std::thread> m_thread;
    // 用于确保刷盘的线程资源初始化完成

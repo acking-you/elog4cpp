@@ -76,10 +76,10 @@ void LoggerImpl::LogConsole(Config* config, const context& ctx)
 
    {
       std::lock_guard<std::mutex> lk(m_mutex);   // Lock the I/O device
-#if defined(__linux__)
-      ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
-#else
+#if !defined(__linux__)
       ::fwrite(buffer.data(), 1, buffer.size(), stdout);
+#else
+      ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
 #endif
    }
    std::fflush(stdout);
@@ -91,10 +91,10 @@ void LoggerImpl::LogConsoleUnsafe(Config* config, const context& ctx)
 
    auto buffer = buffer_t{};
    config->log_formatter(config, ctx, buffer, Appenders::kConsole);
-#if defined(__linux__)
-   ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
-#else
+#if !defined(__linux__)
    ::fwrite(buffer.data(), 1, buffer.size(), stdout);
+#else
+   ::fwrite_unlocked(buffer.data(), 1, buffer.size(), stdout);
 #endif
    std::fflush(stdout);
 }
@@ -135,6 +135,7 @@ void Log::log_it_(context& ctx) const
 {
    ctx.level = m_level;
    ctx.tid   = elog::ProcessInfo::GetTid();
+   ctx.err   = errno;
    detail::LoggerImpl::GetInstance().DoConfigLog(
      m_config ? m_config : &GlobalConfig::Get(), ctx);
 }

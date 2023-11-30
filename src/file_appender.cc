@@ -52,7 +52,7 @@ void FileAppender::init(const char* filename)
 #if defined(_WIN32)
    ::fopen_s(&m_file, filename, "a");
 #else
-   m_file  = ::fopen(filename, "ae");
+   m_file = ::fopen(filename, "ae");
 #endif
    if (m_file == nullptr)
    {
@@ -105,10 +105,7 @@ void FileAppender::append(const char* line, size_t len)
 
 void FileAppender::flush()
 {
-   if (m_file)
-   {
-      ::fflush(m_file);
-   }
+   if (m_file) { ::fflush(m_file); }
 }
 
 size_t FileAppender::write(const char* line, size_t len)
@@ -116,10 +113,10 @@ size_t FileAppender::write(const char* line, size_t len)
    size_t sz = 0;
    if (m_file)
    {
-#if defined(__linux__)
-      sz = ::fwrite_unlocked(line, 1, len, m_file);
-#else
+#if !defined(__linux__)
       sz = ::fwrite(line, 1, len, m_file);
+#else
+      sz = ::fwrite_unlocked(line, 1, len, m_file);
 #endif
    }
    return sz;

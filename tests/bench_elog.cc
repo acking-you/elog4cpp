@@ -7,7 +7,9 @@ using namespace elog;
 
 void before_bench()
 {
-   GlobalConfig::Get().loadFromJSON("../../config.json");
+   GlobalConfig::Get()
+     .loadFromJSON("../../config.json")
+     .setFilepath(PROJECT_ROOT "tests/test_log/");
 }
 
 void one_thread_async(int bench_n, int test_n)

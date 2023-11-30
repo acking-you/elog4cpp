@@ -8,7 +8,7 @@
   * [How to configure](#how-to-configure)
     * [Global configuration](#global-configuration)
       * [Configuration methods](#configuration-methods)
-      * [Example of using](#example-of-using)
+      * [Example of using](#example-of-using-)
     * [Local configuration](#local-configuration)
   * [Detailed interface description](#detailed-interface-description)
     * [Formatter](#formatter)

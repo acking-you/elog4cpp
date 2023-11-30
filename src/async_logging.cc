@@ -109,7 +109,7 @@ void AsyncLogging::pushMsg(inner_message const& msg)
 
    // 缓存满了，需要flush
    m_buffers.push_back(std::move(m_curBuffer));   // 转移指针所有权
-   if (!m_nextBuffer.valid())
+   if (m_nextBuffer.valid())
    {
       // 如果备用内存还存在，则直接使用备用内存
       m_curBuffer = std::move(m_nextBuffer);
@@ -123,10 +123,6 @@ void AsyncLogging::pushMsg(inner_message const& msg)
    m_cv.notify_one();   // 通知消费
 }
 
-struct call_once
-{
-   explicit call_once(const std::function<void()>& func) { func(); }
-};
 
 // 异步写入和内存复用
 void AsyncLogging::thread_worker()
@@ -148,16 +144,20 @@ void AsyncLogging::thread_worker()
             std::unique_lock<std::mutex> lock(m_mtx);
             if (m_buffers.empty())
             {
-               thread_local call_once once([&]() {
+               std::call_once(m_onceFlag, [&]() {
                   // 只执行一次，外界会等待thread任务执行到这
                   m_latch.countDown();
                });
 
                m_cv.wait_for(lock, std::chrono::seconds(m_flushInterval));
             }
-            // 等待flush_interval后，不管是否有任务，都把cur_buffer刷入buffers，然后再交换到buffer减小临界区
-            m_buffers.push_back(std::move(m_curBuffer));
-            m_curBuffer = std::move(newBuffer1);   // 换上新的内存
+            // 等待flush_interval后，如果有任务
+            if (m_curBuffer.avail() > 0)
+            {
+               m_buffers.push_back(std::move(m_curBuffer));
+               m_curBuffer = std::move(newBuffer1);   // 换上新的内存
+            }
+            // 交换到buffer减小临界区
             buffersToWrite.swap(m_buffers);
             if (!m_nextBuffer.valid())
             {
