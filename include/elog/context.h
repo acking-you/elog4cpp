@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
+#include <string>
 
-#include "string_view.h"
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4244)
