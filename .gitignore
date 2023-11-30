@@ -8,3 +8,6 @@ log.txt
 .vs
 gh-md-toc.exe
 gh-md-toc
+.DS_Store
+*.log
+auto_clean.sh

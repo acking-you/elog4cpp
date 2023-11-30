@@ -3,8 +3,8 @@
 
 #define ENABLE_ELG_CHECK
 #define ENABLE_ELG_LOG
-#include "elog/logger.h"
 #include "doctest/doctest.h"
+#include "elog/logger.h"
 #include "nanobench.h"
 
 using namespace elog;
@@ -12,7 +12,7 @@ using namespace elog;
 struct Timer
 {
    std::chrono::time_point<std::chrono::high_resolution_clock> startPoint;
-   void    start() { startPoint = std::chrono::high_resolution_clock::now(); }
+   void start() { startPoint = std::chrono::high_resolution_clock::now(); }
    [[nodiscard]] int64_t end() const
    {
       auto endPoint = std::chrono::high_resolution_clock::now();
@@ -29,7 +29,7 @@ void set_console_json_config()
 {
    GlobalConfig::Get()
      .enableConsole(false)
-     .setFilepath(PROJECT_ROOT "log/")
+     .setFilepath(PROJECT_ROOT "tests/test_log/")
      .setLevel(elog::kInfo)
      .setFormatter(formatter::jsonFormatter)
      .setFlag(kStdFlags + kThreadId);
@@ -39,7 +39,7 @@ void set_console_colorful_config()
 {
    GlobalConfig::Get()
      .enableConsole(false)
-     .setFilepath(PROJECT_ROOT "log/")
+     .setFilepath(PROJECT_ROOT "tests/test_log/")
      .setFormatter(formatter::colorfulFormatter)
      .setFlag(kStdFlags + kThreadId);
 }
@@ -48,7 +48,7 @@ void set_custom_config()
 {
    GlobalConfig::Get()
      .enableConsole(false)
-     .setFilepath(PROJECT_ROOT "log/")
+     .setFilepath(PROJECT_ROOT "tests/test_log/")
      .setFormatter(
        formatter::customFromString("[%n][%T][tid:%t][%L][%F][%f]: %v"))
      .setFlag(kStdFlags + kThreadId);
@@ -58,6 +58,7 @@ void set_timer_callback_and_load_config()
 {
    GlobalConfig::Get()
      .loadFromJSON(PROJECT_ROOT "config.json")
+     .setFilepath(PROJECT_ROOT "tests/test_log/")
      .setBefore([](output_buf_t& bf) {
         bf.setContext(Timer{});
         auto& tm = any_cast<Timer&>(bf.getMutableContext());
@@ -119,27 +120,13 @@ void test_console_colorful_config()
    elog::Log::info("hello ejson4cpp");
 }
 
-void test_and_bench_CHECK()
-{
-   const char* data = "n32432432dsfdsafrerm,m,sdfsfsadfjihaodajfladsjfdskaffds";
-   GlobalConfig::Get().enableConsole(false).setFilepath(PROJECT_ROOT "log/");
-   ankerl::nanobench::Bench()
-     .minEpochIterations(1000)
-     .run("bench CHECK", [&]() { ELG_CHECK(1 == 1).info("{}", data); })
-     .doNotOptimizeAway(data);
-}
-
 TEST_SUITE_BEGIN("test config&micros");
-
-TEST_CASE("bench CHECK_XXX"){
-   test_and_bench_CHECK();
-}
 
 TEST_CASE("test config")
 {
    // test config with callback
    test_timer_callback_and_load_config();
-   //test local config
+   // test local config
    test_localConfig();
    // test json formatter
    test_console_json_config();

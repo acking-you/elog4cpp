@@ -18,29 +18,28 @@ public:
 
    static constexpr source_location current(
      const char*          fileName     = __builtin_FILE(),
-     const char*          functionName = __builtin_FUNCTION(),
      const uint_least32_t lineNumber   = __builtin_LINE(),
+     const char*          functionName = __builtin_FUNCTION(),
      const uint_least32_t columnOffset = __builtin_COLUMN()) noexcept
 #elif defined(__apple_build_version__) and defined(__clang__) and              \
   (__clang_major__ >= 9)
    static constexpr source_location current(
      const char*          fileName     = __builtin_FILE(),
-     const char*          functionName = __builtin_FUNCTION(),
      const uint_least32_t lineNumber   = __builtin_LINE(),
+     const char*          functionName = __builtin_FUNCTION(),
      const uint_least32_t columnOffset = __builtin_COLUMN()) noexcept
 #elif defined(__GNUC__) and                                                    \
   (__GNUC__ > 4 or (__GNUC__ == 4 and __GNUC_MINOR__ >= 8))
    static constexpr source_location current(
      const char*          fileName     = __builtin_FILE(),
-     const char*          functionName = __builtin_FUNCTION(),
      const uint_least32_t lineNumber   = __builtin_LINE(),
+     const char*          functionName = __builtin_FUNCTION(),
      const uint_least32_t columnOffset = 0) noexcept
 #else
 #warning "unsupported source_location"
    static constexpr source_location current(
-     const char*          fileName     = "unsupported",
+     const char* fileName = "unsupported", const uint_least32_t lineNumber = 0,
      const char*          functionName = "unsupported",
-     const uint_least32_t lineNumber   = 0,
      const uint_least32_t columnOffset = 0) noexcept
 #endif
    {
