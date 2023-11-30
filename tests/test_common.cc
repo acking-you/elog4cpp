@@ -2,7 +2,6 @@
 #include <elog/logger.h>
 #include <fmt/ostream.h>
 
-
 using namespace elog;
 
 TEST_SUITE_BEGIN("common test");
@@ -27,10 +26,11 @@ TEST_CASE("test OutputBuffer")
       REQUIRE_EQ(to_string(buffer), "aab123");
    }
    {
-      buffer_t buffer;
+      buffer_t     buffer;
       output_buf_t out(&buffer);
       out.setContext("String");
-      REQUIRE_EQ(any_cast<const char*>(out.getContext()), "String");
+      REQUIRE_EQ(std::string(any_cast<const char *>(out.getContext())),
+                 "String");
       out.setContext(324);
       REQUIRE_EQ(any_cast<int>(out.getContext()), 324);
    }
@@ -45,7 +45,8 @@ TEST_CASE("test const_util")
    REQUIRE_EQ(elog::detail::GetShortName("a/b/c"), std::string("c"));
    REQUIRE_EQ(elog::detail::GetShortName("/"), std::string(""));
    REQUIRE_EQ(elog::detail::GetShortName("asfds/afsa/saf"), std::string("saf"));
-   REQUIRE_EQ(elog::detail::GetShortName("asfds\\afsa\\sdf"), std::string("sdf"));
+   REQUIRE_EQ(elog::detail::GetShortName("asfds\\afsa\\sdf"),
+              std::string("sdf"));
 }
 
 TEST_SUITE_END;

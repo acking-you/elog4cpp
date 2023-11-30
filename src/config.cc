@@ -330,30 +330,42 @@ auto GlobalConfig::loadToJSON(const char* filename) -> GlobalConfig&
    auto object             = ejson::JObject::Dict();
    object.at("elog").get_from(t_config);
    auto list = ejson::JObject::List();
-   list.push_back("下面的数值都是默认生成的注释，用于说明参数填写的注意事项");
-   list.push_back("name:可选参数，默认不填则日志输出无name");
-   list.push_back("roll_size:滚动日志的阈值，以mb为单位");
-   list.push_back("flush_interval:日志后台刷盘的时间，以秒为单位");
-   list.push_back("out_console:是否开启输出控制台，是bool值");
+   list.push_back(
+     "The following values are default-generated comments intended to explain "
+     "considerations for filling in the parameters:");
+   list.push_back("name: optional parameter, if left empty by default, the log "
+                  "output will lack a name.");
+   list.push_back(
+     "roll_size:Threshold for rolling logs, measured in megabytes (MB)");
+   list.push_back("flush_interval:The time interval for the log backend to "
+                  "flush, measured in seconds.");
+   list.push_back("out_console:Whether to enable console output, represented "
+                  "as a boolean value.");
    list.push_back(
      "out_file:"
      "是否开启输出日志文件，不开启请使用null值，开启请用一个文件夹目录");
    list.push_back(
-     "flag:用于开启日志对应输出的数据内容，有date,time,line,file,short_file,"
-     "tid,func七种，可以通过+"
-     "号来同时开启，当然也可直接使用default，它表示除tid以外的所有选项");
-   list.push_back("level:用于规定全局的最低输出等级，有trace,debug,info,warn,"
-                  "error,fatal,默认使用debug");
+     "flag:The data content used to enable corresponding log output has seven "
+     "options: `date`, `time`, `line`, `file`, `short_file`, `tid`, `func`. "
+     "You can activate them simultaneously using the plus sign (+), or simply "
+     "use 'default' to represent all options except 'tid'.");
    list.push_back(
-     "formatter:用于规定全局的日志格式化方式，有default,colorful,"
-     "custom这三种，默认采取default，如果使用custom，则需要添加fmt_string");
-   list.push_back("fmt_string:"
-                  "仅当formatter选择custom后用于设定自定义的formatter，对应的数"
-                  "据表示如下：%T:time,%t:"
-                  "tid,%F:"
-                  "filepath,%f:func,%e:error info"
-                  ",%L:long levelText,%l:short levelText,%v:message ,%c color "
-                  "start %C color end");
+     "level:\n"
+     "It is used to define the global minimum output level, with options "
+     "including `trace`, `debug`, `info`, `warn`, `error`, `fatal`. By "
+     "default, it uses `debug` as the minimum output level.");
+   list.push_back("formatter:\n"
+                  "It's used to specify the global log formatting style, "
+                  "offering three options: default, colorful, custom. By "
+                  "default, it uses the default formatting style. If 'custom' "
+                  "is chosen, you'll need to add 'fmt_string'.");
+   list.push_back(
+     "fmt_string:"
+     "This is the format used exclusively when the 'custom' formatter is "
+     "selected. The corresponding data representation is as follows: %T for "
+     "time, %t for thread ID, %F for file path, %f for function, %e for error "
+     "info, %L for long level text, %l for short level text, %v for message, "
+     "%c for color start, and %C for color end.");
    object.at("comments").ref = std::move(list);
    ejson::Parser::ToFile(filename, object, 2);
 
