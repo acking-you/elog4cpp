@@ -277,7 +277,7 @@ void formatter::jsonFormatter(Config* config, context const& ctx,
 // use %T:time,%t:tid,%F:filepath,%f:func, %e:error info
 //  %L:long levelText,%l:short levelText,%n:name,%v:message ,%c color start %C
 //  color end
-void formatter::customStringFormatter(const StringView& format_str,
+void formatter::customStringFormatter(const char* raw_format_str,
                                       Config* config, context const& ctx,
                                       buffer_t& buffer, Appenders outType)
 {
@@ -287,8 +287,8 @@ void formatter::customStringFormatter(const StringView& format_str,
    // RAII before after call
    auto helper =
      trigger_helper(&outputBuffer, &config->log_before, &config->log_after);
-
-   size_t index = format_str.find('%');
+   StringView format_str{raw_format_str};
+   size_t     index = format_str.find('%');
    // not find format flag
    if (index == std::string::npos)
    {
